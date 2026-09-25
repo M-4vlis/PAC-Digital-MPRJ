@@ -28,6 +28,56 @@ def pncp_payload(demand: Demand):
     if demand.extraordinary and not demand.change_justification: errors.append("inclusão extraordinária exige justificativa.")
     return {"valid": not errors, "publishable": False, "notice": "Payload de pré-validação. Não envia dados ao PNCP e não usa credenciais.", "payload": {"anoPca": demand.desired_date.year, "itens": [item]}, "errors": errors}
 
+def risk_assessment(demand: Demand, reference_date: date | None = None):
+    reference = reference_date or date.today()
+    if demand.execution_status in {"contracted", "cancelled"}:
+        return {"level": "low", "label": "Baixo", "reasons": ["Fluxo encerrado."]}
+    plan = backplan(demand.desired_date, demand.category)
+    preparatory_start = date.fromisoformat(plan["milestones"][1]["date"])
+    reasons = []
+    score = 0
+    if demand.execution_status == "reprogrammed":
+        score += 3; reasons.append("Demanda reprogramada.")
+    if demand.execution_status == "not_started" and reference >= preparatory_start:
+        score += 3; reasons.append("Fase preparatória ainda não iniciada após a data retroplanejada.")
+    if not demand.pncp_item_code:
+        score += 1; reasons.append("Código de catálogo PNCP pendente.")
+    if not demand.sei_process_number and demand.execution_status in {"preparatory", "contracting"}:
+        score += 1; reasons.append("Processo SEI ainda não vinculado.")
+    if demand.desired_date < reference and demand.execution_status not in {"contracted", "cancelled"}:
+        score += 2; reasons.append("Data desejada já ultrapassada.")
+    level, label = ("high", "Alto") if score >= 4 else (("medium", "Médio") if score >= 2 else ("low", "Baixo"))
+    return {"level": level, "label": label, "score": score, "reasons": reasons or ["Sem alerta relevante pelos parâmetros demonstrativos."]}
+
+def integration_catalog():
+    sei_wsdl = bool(os.getenv("SEI_WSDL_URL"))
+    sei_key = bool(os.getenv("SEI_SERVICE_KEY"))
+    pncp_base = bool(os.getenv("PNCP_API_BASE_URL"))
+    pncp_key = bool(os.getenv("PNCP_API_TOKEN"))
+    return [
+        {
+            "id": "sei", "name": "SEI!", "protocol": "SOAP/WSDL",
+            "status": "configured" if sei_wsdl and sei_key else "staging",
+            "configured": sei_wsdl and sei_key, "transmission_enabled": False,
+            "requirements": ["WSDL da instância MPRJ", "serviço e operações autorizadas", "chave de acesso ou IP liberado"],
+            "notice": "Adaptador preparado. Nenhuma chamada externa é feita nesta versão.",
+        },
+        {
+            "id": "pncp", "name": "PCA/PNCP", "protocol": "REST/JSON",
+            "status": "configured" if pncp_base and pncp_key else "staging",
+            "configured": pncp_base and pncp_key, "transmission_enabled": False,
+            "requirements": ["homologação do payload", "credencial institucional", "mapeamento do catálogo"],
+            "notice": "Geração e validação local habilitadas; publicação externa bloqueada.",
+        },
+        {
+            "id": "identity", "name": "Identidade institucional", "protocol": "OIDC/LDAP",
+            "status": "configured" if os.getenv("OIDC_ISSUER_URL") else "planned",
+            "configured": bool(os.getenv("OIDC_ISSUER_URL")), "transmission_enabled": False,
+            "requirements": ["issuer institucional", "client id", "mapeamento de grupos e unidades"],
+            "notice": "Ponto de integração desacoplado; o provedor institucional ainda não foi informado.",
+        },
+    ]
+
 def csv_export(demands):
     output = io.StringIO(); fields = ["code", "title", "unit", "category", "status", "execution_status", "original_value", "revised_value", "adjusted_value", "executed_value"]
     writer = csv.DictWriter(output, fieldnames=fields); writer.writeheader()

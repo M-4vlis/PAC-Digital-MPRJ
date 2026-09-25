@@ -1,0 +1,53 @@
+services:
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pac_digital
+      POSTGRES_USER: pac_app
+      POSTGRES_PASSWORD: ${PAC_DB_PASSWORD:?Defina PAC_DB_PASSWORD no arquivo .env}
+    volumes:
+      - pac_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pac_app -d pac_digital"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://pac_app:${PAC_DB_PASSWORD}@database:5432/pac_digital
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-}
+      SEI_WSDL_URL: ${SEI_WSDL_URL:-}
+      SEI_SERVICE_KEY: ${SEI_SERVICE_KEY:-}
+      PNCP_API_BASE_URL: ${PNCP_API_BASE_URL:-}
+      PNCP_API_TOKEN: ${PNCP_API_TOKEN:-}
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: ../frontend
+    restart: unless-stopped
+    ports:
+      - "${PAC_HTTP_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pac_postgres:

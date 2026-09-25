@@ -5,12 +5,13 @@ from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from .database import Base, engine, get_session
-from .models import Demand, DemandVersion, Review
+from .models import AuditEvent, Demand, DemandVersion, Review
 from .schemas import BackplanRequest, DemandCreate, LoaAdjustment, ReviewCreate, SeiLinkRequest, TransitionRequest
 from .seed import seed
-from .services import EXECUTION_TRANSITIONS, backplan, csv_export, demand_payload, pncp_payload, sei_integration_plan, snapshot
+from .services import EXECUTION_TRANSITIONS, backplan, csv_export, demand_payload, integration_catalog, pncp_payload, risk_assessment, sei_integration_plan, snapshot
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -20,8 +21,17 @@ async def lifespan(_: FastAPI):
     finally: db.close()
     yield
 
-app = FastAPI(title="PAC Digital MPRJ", version="0.7.0", description="API demonstrativa; dados estritamente fictícios.", lifespan=lifespan)
+app = FastAPI(title="PAC Digital MPRJ", version="0.8.0", description="API demonstrativa; dados estritamente fictícios.", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
 
 def get_demand(db, demand_id):
     demand = db.get(Demand, demand_id)
@@ -29,11 +39,16 @@ def get_demand(db, demand_id):
     return demand
 
 @app.get("/health")
-def health(): return {"status":"ok", "version":"0.7.0", "data_classification":"fictitious_demo"}
+def health(): return {"status":"ok", "version":"0.8.0", "data_classification":"fictitious_demo"}
+
+@app.get("/health/ready")
+def readiness(db: Session = Depends(get_session)):
+    db.execute(text("SELECT 1"))
+    return {"status": "ready", "database": "available", "version": "0.8.0"}
 
 @app.get("/api/demands")
 def demands(db: Session = Depends(get_session)):
-    return [demand_payload(d) for d in db.query(Demand).order_by(Demand.code).all()]
+    return [{**demand_payload(d), "risk": risk_assessment(d)} for d in db.query(Demand).order_by(Demand.code).all()]
 
 @app.post("/api/demands", status_code=201)
 def create_demand(body: DemandCreate, db: Session = Depends(get_session)):
@@ -46,7 +61,8 @@ def create_demand(body: DemandCreate, db: Session = Depends(get_session)):
 
 @app.get("/api/demands/{demand_id}")
 def demand(demand_id: int, db: Session = Depends(get_session)):
-    return demand_payload(get_demand(db, demand_id))
+    item = get_demand(db, demand_id)
+    return {**demand_payload(item), "risk": risk_assessment(item)}
 
 @app.get("/api/demands/{demand_id}/versions")
 def versions(demand_id: int, db: Session = Depends(get_session)):
@@ -111,14 +127,38 @@ def sei_plan(demand_id: int, db: Session = Depends(get_session)):
 
 @app.get("/api/integrations/sei/status")
 def sei_status():
-    return {"available": True, "protocol": "SOAP/WSDL", "configured": False, "transmission_enabled": False, "requirements": ["WSDL da instância MPRJ", "cadastro do PAC Digital em Administração > Sistemas", "serviço e operações autorizadas", "chave ou IP liberado", "unidades e tipos de processo/documento permitidos"]}
+    return next(item for item in integration_catalog() if item["id"] == "sei")
+
+@app.get("/api/integrations")
+def integrations():
+    return integration_catalog()
+
+@app.get("/api/system/readiness")
+def system_readiness(db: Session = Depends(get_session)):
+    db.execute(text("SELECT 1"))
+    catalog = integration_catalog()
+    return {
+        "version": "0.8.0", "application": "ready_for_demonstration", "database": "available",
+        "data_classification": "fictitious_demo", "external_transmission_enabled": False,
+        "integrations": {item["id"]: item["status"] for item in catalog},
+        "institutional_dependencies": ["provedor de identidade", "autorização e WSDL do SEI-MPRJ", "homologação e credenciais do PNCP"],
+    }
+
+@app.get("/api/audit-events")
+def audit_events(limit: int = 50, db: Session = Depends(get_session)):
+    safe_limit = max(1, min(limit, 200))
+    rows = db.query(AuditEvent).order_by(AuditEvent.created_at.desc(), AuditEvent.id.desc()).limit(safe_limit).all()
+    demands = {d.id: d.code for d in db.query(Demand).filter(Demand.id.in_({row.demand_id for row in rows})).all()} if rows else {}
+    return [{"id": row.id, "demand_id": row.demand_id, "demand_code": demands.get(row.demand_id), "action": row.action, "actor_role": row.actor_role, "detail": row.detail, "created_at": row.created_at.isoformat()} for row in rows]
 
 @app.get("/api/governance/dashboard")
 def dashboard(db: Session = Depends(get_session)):
     rows = db.query(Demand).all(); planned = sum(float(x.adjusted_value or x.revised_value or x.original_value) for x in rows); executed = sum(float(x.executed_value) for x in rows)
     altered = sum(1 for x in rows if x.version > 1 or x.revised_value is not None or x.adjusted_value is not None)
-    risk = sum(1 for x in rows if x.execution_status in {"not_started","reprogrammed"})
-    return {"planned_value":planned,"executed_value":executed,"execution_rate":round(executed/planned*100,2) if planned else 0,"demands":len(rows),"altered_demands":altered,"risk_demands":risk,"extraordinary_inclusions":sum(x.extraordinary for x in rows),"cancelled":sum(x.execution_status=="cancelled" for x in rows),"reprogrammed":sum(x.execution_status=="reprogrammed" for x in rows),"notice":"Indicadores demonstrativos com dados fictícios; não correspondem a execução institucional."}
+    risks = [risk_assessment(x) for x in rows]
+    risk = sum(item["level"] == "high" for item in risks)
+    status_distribution = {status: sum(x.execution_status == status for x in rows) for status in EXECUTION_TRANSITIONS}
+    return {"planned_value":planned,"executed_value":executed,"execution_rate":round(executed/planned*100,2) if planned else 0,"demands":len(rows),"altered_demands":altered,"risk_demands":risk,"medium_risk_demands":sum(item["level"] == "medium" for item in risks),"extraordinary_inclusions":sum(x.extraordinary for x in rows),"cancelled":sum(x.execution_status=="cancelled" for x in rows),"reprogrammed":sum(x.execution_status=="reprogrammed" for x in rows),"status_distribution":status_distribution,"notice":"Indicadores demonstrativos com dados fictícios; não correspondem a execução institucional."}
 
 @app.get("/api/exports/demands.{format}")
 def export_demands(format: str, db: Session = Depends(get_session)):

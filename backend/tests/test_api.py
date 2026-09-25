@@ -10,11 +10,14 @@ def setup_module():
 
 def test_health():
     response = TestClient(app).get("/health")
-    assert response.status_code == 200 and response.json()["version"] == "0.7.0"
+    assert response.status_code == 200 and response.json()["version"] == "0.8.0"
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert TestClient(app).get("/health/ready").json()["status"] == "ready"
 
 def test_dashboard_and_exports():
     client=TestClient(app)
-    assert client.get("/api/governance/dashboard").json()["demands"] >= 6
+    dashboard = client.get("/api/governance/dashboard").json()
+    assert dashboard["demands"] >= 6 and "status_distribution" in dashboard
     assert client.get("/api/exports/demands.csv").text.startswith("code,title")
     assert client.get("/api/exports/demands.json").status_code == 200
     assert client.get("/api/exports/demands.xlsx").headers["content-type"].startswith("application/vnd")
@@ -48,3 +51,17 @@ def test_create_transition_and_sei_staging():
     assert linked.status_code == 200 and linked.json()["sei_status"] == "linked_manually"
     plan=client.get(f"/api/demands/{created['id']}/sei-integration-plan").json()
     assert plan["will_transmit"] is False and "WSDL" in plan["notice"]
+
+def test_executive_readiness_integrations_and_audit():
+    client = TestClient(app)
+    readiness = client.get("/api/system/readiness")
+    assert readiness.status_code == 200
+    assert readiness.json()["application"] == "ready_for_demonstration"
+    assert readiness.json()["external_transmission_enabled"] is False
+    integrations = client.get("/api/integrations").json()
+    assert {item["id"] for item in integrations} == {"sei", "pncp", "identity"}
+    assert all(item["transmission_enabled"] is False for item in integrations)
+    events = client.get("/api/audit-events?limit=5").json()
+    assert 1 <= len(events) <= 5 and events[0]["demand_code"].startswith("PAC-")
+    demands = client.get("/api/demands").json()
+    assert all(item["risk"]["level"] in {"low", "medium", "high"} for item in demands)

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.8.0 — Candidata à demonstração executiva
+
+- Interface redesenhada com visão executiva, carteira pesquisável, integrações e governança.
+- Risco explicável, detalhe de demanda, retroplanejamento, prontidão PNCP e histórico na mesma experiência.
+- Catálogo de integrações SEI, PCA/PNCP e identidade institucional com estado de configuração explícito.
+- Endpoints de auditoria, prontidão operacional e healthcheck de banco.
+- Cabeçalhos de segurança e implantação portátil com PostgreSQL, Nginx e Docker Compose.
+- Pipeline de integração contínua, roteiro de demonstração e documentação operacional.
+- Transmissões externas continuam deliberadamente bloqueadas.
+
 ## v0.7.0 — Vertical utilizável e preparação SEI
 
 - Build do frontend concluído e dependências tornadas reprodutíveis no ambiente corporativo.

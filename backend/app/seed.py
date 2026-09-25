@@ -15,5 +15,5 @@ DEMO = [
 def seed(db: Session):
     if db.query(Demand).count(): return
     for item in DEMO:
-        demand = Demand(**item); db.add(demand); db.flush(); snapshot(db, demand, "seed_created", "Registro fictício de demonstração v0.6.")
+        demand = Demand(**item); db.add(demand); db.flush(); snapshot(db, demand, "seed_created", "Registro fictício de demonstração v0.8.")
     db.commit()

@@ -1,7 +1,7 @@
 {
   "name": "pac-digital-mprj-frontend",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.8.0",
   "scripts": {"dev":"vite", "build":"node ./node_modules/typescript/bin/tsc -b && vite build"},
   "dependencies": {"react":"file:vendor/react", "react-dom":"file:vendor/react-dom"},
   "devDependencies": {"@types/prop-types":"file:types/prop-types", "@types/react":"file:types/react/v18", "@types/react-dom":"file:types/react-dom/v18", "typescript":"file:vendor/typescript", "vite":"5.4.10"}

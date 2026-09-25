@@ -1,31 +1,33 @@
-# Status — v0.7
+# Status — v0.8.0
 
-**Situação:** vertical funcional demonstrativo, com frontend compilado e preparação PNCP/SEI sem transmissão externa.
+**Situação:** candidata à demonstração executiva e à implantação controlada em VPS. O domínio do PAC está funcional; integrações externas e identidade institucional dependem de autorização e dados do MPRJ.
 
-## Validação no ambiente de entrega
+## Validado
 
-- Backend: testes de integração aprovados (`5 passed`).
-- Migrations: cadeia `0001 → 0002` validada em SQLite novo.
-- Frontend: dependências instaladas e build React/TypeScript/Vite concluído (`30 módulos`, bundle JS de aproximadamente 149 kB).
-- Cadeia de dependências: tipos React, runtime React e TypeScript vendorizados para contornar o certificado/proxy corporativo; Vite permanece como dependência aberta instalada pelo gerenciador.
+- Backend: 6 testes de integração aprovados.
+- Migrations: cadeia `0001 → 0002` aplicável em banco limpo.
+- Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 162 kB.
+- Interface em execução: visão executiva, carteira, detalhe da demanda, integrações e governança inspecionados no navegador.
+- Banco para implantação: PostgreSQL 16 em composição Docker; SQLite continua disponível para desenvolvimento e demonstração local.
+- Segurança básica: cabeçalhos HTTP, healthcheck de prontidão, segredos fora do repositório e transmissões externas bloqueadas.
 
-## Escopo entregue
+## Entregue na v0.8
 
-- Revisões aprovadas aplicadas à demanda em nova versão, com histórico imutável de payload e auditoria.
-- Adequação pós-LOA: valores original, revisado e ajustado, com justificativa obrigatória.
-- Retroplanejamento por marcos, com parâmetros configuráveis e aviso explícito de que não são prazos normativos.
-- Painel de governança: planejado × executado, alterações, riscos, inclusões extraordinárias, cancelamentos e reprogramações.
-- Exportações CSV, JSON e XLSX.
-- Payload PCA/PNCP gerado e validado localmente; a saída declara que não é publicável e não transmite dados.
-- Dataset demonstrativo com seis demandas fictícias em cenários distintos.
-- Restrições de API: CORS limitado ao ambiente local de desenvolvimento, validação de entrada, erros 404/409 e sem rotas de publicação externa.
-- Criação de demanda pela interface e transições controladas da execução.
-- Vínculo local a processo SEI e diagnóstico de integração SOAP/WSDL, sem comunicação real.
+- Nova interface executiva responsiva, com estados e rótulos em português.
+- Risco explicável por demanda, combinado com retroplanejamento não normativo.
+- Detalhe unificado com valores, marcos, pendências PNCP, vínculo SEI e histórico.
+- Painel explícito de prontidão para SEI!, PCA/PNCP e identidade OIDC/LDAP.
+- Trilha de auditoria navegável e endpoint de eventos.
+- Diagnóstico operacional e endpoints de saúde/prontidão.
+- Topologia de implantação `web → API → PostgreSQL`, com healthchecks.
+- Pipeline CI para testes e build.
 
-## Limites deliberados
+## Dependências para uso institucional real
 
-- A autenticação continua demonstrativa: não há conexão com identidade institucional.
-- O modelo de payload PNCP é uma pré-validação de interoperabilidade, não homologação com a API oficial.
-- Os prazos do retroplanejamento são parâmetros de gestão e não norma MPRJ.
-- Não há dados internos reais, credenciais, publicação institucional ou dependência mandatória de SaaS.
-- A integração SEI depende de cadastro e autorização pela administração da instância MPRJ, além da confirmação do WSDL e das operações liberadas.
+1. Conectar autenticação institucional e definir matriz de perfis/unidades.
+2. Obter autorização, WSDL, operações e credencial/IP do SEI-MPRJ.
+3. Homologar o payload PCA/PNCP, mapear catálogo e receber credencial institucional.
+4. Definir domínio, certificado HTTPS, política de backup e observabilidade da infraestrutura.
+5. Validar conteúdo, regras, acessibilidade e fluxo de aprovação com as áreas responsáveis.
+
+Nenhum desses itens pode ser fabricado no projeto: são decisões ou credenciais institucionais. A arquitetura mantém cada integração desacoplada para que sejam conectadas sem reescrever o domínio do PAC.
