@@ -1,0 +1,1 @@
+{"name":"react-dom","version":"18.3.1","main":"index.js","exports":{".":"./index.js","./client":"./client.js"},"dependencies":{"scheduler":"^0.23.2"},"peerDependencies":{"react":"^18.3.1"}}

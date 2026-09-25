@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+const ts = require('../lib/typescript.js')
+ts.executeCommandLine(ts.sys, ts.noop, process.argv.slice(2))

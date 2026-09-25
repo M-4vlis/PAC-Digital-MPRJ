@@ -1,0 +1,11 @@
+services:
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - pac_data:/app/data
+    environment:
+      DATABASE_URL: sqlite:////app/data/pac.db
+volumes:
+  pac_data:
