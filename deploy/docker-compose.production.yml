@@ -18,6 +18,10 @@ services:
     build:
       context: ../backend
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - pac-digital-api
     environment:
       DATABASE_URL: postgresql+psycopg://pac_app:${PAC_DB_PASSWORD}@database:5432/pac_digital
       OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-}
