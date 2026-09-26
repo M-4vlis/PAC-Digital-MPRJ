@@ -26,9 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Report runner network address
-        run: printf 'runner_ip=%s\n' "$(curl -fsS https://api.ipify.org)"
-
       - name: Configure temporary SSH identity
         env:
           PAC_ORACLE_SSH_KEY: ${{ secrets.PAC_ORACLE_SSH_KEY }}
@@ -36,26 +33,23 @@ jobs:
           install -m 700 -d "$RUNNER_TEMP/pac-ssh"
           printf '%s\n' "$PAC_ORACLE_SSH_KEY" > "$RUNNER_TEMP/pac-ssh/id_ed25519"
           chmod 600 "$RUNNER_TEMP/pac-ssh/id_ed25519"
-          ssh-keygen -y -f "$RUNNER_TEMP/pac-ssh/id_ed25519" | ssh-keygen -lf -
 
       - name: Inspect host without changes
         if: inputs.operation == 'inspect'
         run: |
           ssh -i "$RUNNER_TEMP/pac-ssh/id_ed25519" \
-            -o BatchMode=yes -o ConnectTimeout=60 -o ConnectionAttempts=1 \
+            -p 443 -o BatchMode=yes -o ConnectTimeout=60 -o ConnectionAttempts=1 \
             -o StrictHostKeyChecking=accept-new \
-            -o "ProxyCommand=ssh -i $RUNNER_TEMP/pac-ssh/id_ed25519 -o BatchMode=yes -o ConnectTimeout=60 -o StrictHostKeyChecking=accept-new -W %h:%p -p 22 ocid1.bastionsession.oc1.sa-saopaulo-1.amaaaaaa7hw7x4aa2cvocfw5fq65miju6zhyxbblcjanq2loxxwgxdzxnnxq@host.bastion.sa-saopaulo-1.oci.oraclecloud.com" \
-            ubuntu@10.0.0.75 \
+            ubuntu@163.176.228.150 \
             'set -eu; printf "host=%s\n" "$(hostname)"; printf "docker="; (docker --version || true); printf "compose="; (docker compose version || true); printf "git="; (git --version || true); printf "caddy="; (caddy version 2>/dev/null || true); printf "disk="; df -h / | tail -1; printf "pac_health="; (curl -fsS http://127.0.0.1:8080/health || true)'
 
       - name: Deploy PAC Digital on loopback port 8080
         if: inputs.operation == 'deploy'
         run: |
           ssh -i "$RUNNER_TEMP/pac-ssh/id_ed25519" \
-            -o BatchMode=yes -o ConnectTimeout=60 -o ConnectionAttempts=1 \
+            -p 443 -o BatchMode=yes -o ConnectTimeout=60 -o ConnectionAttempts=1 \
             -o StrictHostKeyChecking=accept-new \
-            -o "ProxyCommand=ssh -i $RUNNER_TEMP/pac-ssh/id_ed25519 -o BatchMode=yes -o ConnectTimeout=60 -o StrictHostKeyChecking=accept-new -W %h:%p -p 22 ocid1.bastionsession.oc1.sa-saopaulo-1.amaaaaaa7hw7x4aa2cvocfw5fq65miju6zhyxbblcjanq2loxxwgxdzxnnxq@host.bastion.sa-saopaulo-1.oci.oraclecloud.com" \
-            ubuntu@10.0.0.75 'bash -s' <<'REMOTE'
+            ubuntu@163.176.228.150 'bash -s' <<'REMOTE'
           set -euo pipefail
 
           if ! command -v docker >/dev/null 2>&1; then
