@@ -26,6 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Report runner network address
+        run: printf 'runner_ip=%s\n' "$(curl -fsS https://api.ipify.org)"
+
       - name: Configure temporary SSH identity
         env:
           PAC_ORACLE_SSH_KEY: ${{ secrets.PAC_ORACLE_SSH_KEY }}
@@ -38,7 +41,8 @@ jobs:
         if: inputs.operation == 'inspect'
         run: |
           ssh -i "$RUNNER_TEMP/pac-ssh/id_ed25519" \
-            -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            -o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=1 \
+            -o StrictHostKeyChecking=accept-new \
             ubuntu@163.176.228.150 \
             'set -eu; printf "host=%s\n" "$(hostname)"; printf "docker="; (docker --version || true); printf "compose="; (docker compose version || true); printf "git="; (git --version || true); printf "caddy="; (caddy version 2>/dev/null || true); printf "disk="; df -h / | tail -1; printf "pac_health="; (curl -fsS http://127.0.0.1:8080/health || true)'
 
@@ -46,7 +50,8 @@ jobs:
         if: inputs.operation == 'deploy'
         run: |
           ssh -i "$RUNNER_TEMP/pac-ssh/id_ed25519" \
-            -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            -o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=1 \
+            -o StrictHostKeyChecking=accept-new \
             ubuntu@163.176.228.150 'bash -s' <<'REMOTE'
           set -euo pipefail
 
