@@ -1,0 +1,12 @@
+services:
+  web:
+    networks:
+      default: {}
+      institutional_edge:
+        aliases:
+          - pac-digital-web
+
+networks:
+  institutional_edge:
+    external: true
+    name: ${PAC_EDGE_NETWORK:?Defina PAC_EDGE_NETWORK com a rede do proxy institucional}
