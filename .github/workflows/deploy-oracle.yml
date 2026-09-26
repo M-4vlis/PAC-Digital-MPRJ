@@ -43,7 +43,7 @@ jobs:
           ssh -i "$RUNNER_TEMP/pac-ssh/id_ed25519" \
             -o BatchMode=yes -o ConnectTimeout=60 -o ConnectionAttempts=1 \
             -o StrictHostKeyChecking=accept-new \
-            -o "ProxyCommand=ssh -i $RUNNER_TEMP/pac-ssh/id_ed25519 -o BatchMode=yes -o ConnectTimeout=60 -o StrictHostKeyChecking=accept-new -W %h:%p -p 22 ocid1.bastionsession.oc1.sa-saopaulo-1.amaaaaaa7hw7x4aacsv2lwilz6flj6osrxpglpndzqsuqvahot3ncqf3mema@host.bastion.sa-saopaulo-1.oci.oraclecloud.com" \
+            -o "ProxyCommand=ssh -i $RUNNER_TEMP/pac-ssh/id_ed25519 -o BatchMode=yes -o ConnectTimeout=60 -o StrictHostKeyChecking=accept-new -W %h:%p -p 22 ocid1.bastionsession.oc1.sa-saopaulo-1.amaaaaaa7hw7x4aa2cvocfw5fq65miju6zhyxbblcjanq2loxxwgxdzxnnxq@host.bastion.sa-saopaulo-1.oci.oraclecloud.com" \
             ubuntu@10.0.0.75 \
             'set -eu; printf "host=%s\n" "$(hostname)"; printf "docker="; (docker --version || true); printf "compose="; (docker compose version || true); printf "git="; (git --version || true); printf "caddy="; (caddy version 2>/dev/null || true); printf "disk="; df -h / | tail -1; printf "pac_health="; (curl -fsS http://127.0.0.1:8080/health || true)'
 
@@ -53,7 +53,7 @@ jobs:
           ssh -i "$RUNNER_TEMP/pac-ssh/id_ed25519" \
             -o BatchMode=yes -o ConnectTimeout=60 -o ConnectionAttempts=1 \
             -o StrictHostKeyChecking=accept-new \
-            -o "ProxyCommand=ssh -i $RUNNER_TEMP/pac-ssh/id_ed25519 -o BatchMode=yes -o ConnectTimeout=60 -o StrictHostKeyChecking=accept-new -W %h:%p -p 22 ocid1.bastionsession.oc1.sa-saopaulo-1.amaaaaaa7hw7x4aacsv2lwilz6flj6osrxpglpndzqsuqvahot3ncqf3mema@host.bastion.sa-saopaulo-1.oci.oraclecloud.com" \
+            -o "ProxyCommand=ssh -i $RUNNER_TEMP/pac-ssh/id_ed25519 -o BatchMode=yes -o ConnectTimeout=60 -o StrictHostKeyChecking=accept-new -W %h:%p -p 22 ocid1.bastionsession.oc1.sa-saopaulo-1.amaaaaaa7hw7x4aa2cvocfw5fq65miju6zhyxbblcjanq2loxxwgxdzxnnxq@host.bastion.sa-saopaulo-1.oci.oraclecloud.com" \
             ubuntu@10.0.0.75 'bash -s' <<'REMOTE'
           set -euo pipefail
 
