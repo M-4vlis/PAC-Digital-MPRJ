@@ -36,6 +36,7 @@ jobs:
           install -m 700 -d "$RUNNER_TEMP/pac-ssh"
           printf '%s\n' "$PAC_ORACLE_SSH_KEY" > "$RUNNER_TEMP/pac-ssh/id_ed25519"
           chmod 600 "$RUNNER_TEMP/pac-ssh/id_ed25519"
+          ssh-keygen -y -f "$RUNNER_TEMP/pac-ssh/id_ed25519" | ssh-keygen -lf -
 
       - name: Inspect host without changes
         if: inputs.operation == 'inspect'
