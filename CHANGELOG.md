@@ -9,6 +9,9 @@
 - Cabeçalhos de segurança e implantação portátil com PostgreSQL, Nginx e Docker Compose.
 - Pipeline de integração contínua, roteiro de demonstração e documentação operacional.
 - Transmissões externas continuam deliberadamente bloqueadas.
+- Dockerfile do frontend corrigido para instalação reprodutível com o lockfile pnpm.
+- Implantação controlada validada em Oracle ARM64, com proxy HTTPS protegido e rede de borda opcional.
+- Alias interno exclusivo para impedir colisões entre APIs de diferentes pilhas Docker.
 
 ## v0.7.0 — Vertical utilizável e preparação SEI
 
