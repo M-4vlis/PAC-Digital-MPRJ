@@ -1,12 +1,12 @@
-# Status — v0.10.0
+# Status — v0.11.0
 
 **Situação:** candidata à demonstração executiva, implantada de forma controlada em VPS Oracle. O domínio do PAC está funcional; integrações externas e identidade institucional dependem de autorização e dados do MPRJ.
 
 ## Validado
 
-- Backend: 8 testes de integração aprovados.
-- Migrations: cadeia `0001 → 0004` aplicável em banco limpo.
-- Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 167 kB.
+- Backend: 9 testes de integração aprovados.
+- Migrations: cadeia `0001 → 0005` aplicável em banco limpo.
+- Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 170 kB.
 - Interface em execução: visão executiva, carteira, detalhe da demanda, integrações e governança inspecionados no navegador.
 - Identidade visual: frontend harmonizado com o padrão observado no ecossistema VISÃO MPRJ, usando cabeçalho vinho, detalhe dourado, fundo marfim, navegação horizontal e cartões institucionais responsivos.
 - Banco para implantação: PostgreSQL 16 em composição Docker; SQLite continua disponível para desenvolvimento e demonstração local.
@@ -33,6 +33,14 @@
 - Minimização: identificadores e nomes de fornecedores não são armazenados.
 - P50, P75 e P90 por categoria e referência histórica incorporada ao risco quando a amostra é suficiente.
 - Tratamento de limites e indisponibilidade do PNCP com repetição progressiva, retomada e conclusão parcial segura.
+
+## Entregue na v0.11
+
+- Snapshot público imutável e versionado por exercício.
+- Hash SHA-256 do JSON canônico para verificação de integridade.
+- API e interface de transparência separadas da carteira operacional.
+- Minimização de dados, sem identificadores de processo SEI na publicação.
+- Melhorias de acessibilidade para teclado, foco, mensagens e movimento reduzido.
 
 ## Dependências para uso institucional real
 

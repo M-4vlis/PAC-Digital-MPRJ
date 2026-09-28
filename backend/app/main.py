@@ -8,11 +8,12 @@ from openpyxl import Workbook
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from .database import Base, engine, get_session
-from .models import ApprovalDecision, ApprovalFlow, ApprovalStep, AuditEvent, Demand, DemandApproval, DemandVersion, Review
+from .models import ApprovalDecision, ApprovalFlow, ApprovalStep, AuditEvent, Demand, DemandApproval, DemandVersion, PublicPacSnapshot, Review
 from .schemas import ApprovalDecisionCreate, ApprovalStart, BackplanRequest, DemandCreate, LoaAdjustment, ReviewCreate, SeiLinkRequest, TransitionRequest
 from .seed import seed
 from .services import EXECUTION_TRANSITIONS, backplan, csv_export, demand_payload, integration_catalog, pncp_payload, risk_assessment, sei_integration_plan, snapshot
 from .pncp_history import category_benchmarks, historical_metrics
+from .public_snapshot import snapshot_payload
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -22,7 +23,7 @@ async def lifespan(_: FastAPI):
     finally: db.close()
     yield
 
-app = FastAPI(title="PAC Digital MPRJ", version="0.10.0", description="API demonstrativa com inteligência derivada de dados públicos do PNCP.", lifespan=lifespan)
+app = FastAPI(title="PAC Digital MPRJ", version="0.11.0", description="API demonstrativa com inteligência PNCP e transparência verificável.", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 
 @app.middleware("http")
@@ -40,12 +41,25 @@ def get_demand(db, demand_id):
     return demand
 
 @app.get("/health")
-def health(): return {"status":"ok", "version":"0.10.0", "data_classification":"fictitious_demo_with_public_pncp_history"}
+def health(): return {"status":"ok", "version":"0.11.0", "data_classification":"fictitious_demo_with_public_pncp_history"}
 
 @app.get("/health/ready")
 def readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
-    return {"status": "ready", "database": "available", "version": "0.10.0"}
+    return {"status": "ready", "database": "available", "version": "0.11.0"}
+
+@app.get("/api/public/pac/snapshots")
+def public_snapshots(year: int | None = None, db: Session = Depends(get_session)):
+    query = db.query(PublicPacSnapshot).filter_by(status="published")
+    if year is not None: query = query.filter_by(year=year)
+    rows = query.order_by(PublicPacSnapshot.year.desc(), PublicPacSnapshot.version.desc()).all()
+    return [{"id": row.id, "year": row.year, "version": row.version, "content_hash": row.content_hash, "published_at": row.published_at.isoformat()} for row in rows]
+
+@app.get("/api/public/pac/latest")
+def latest_public_snapshot(year: int = 2026, db: Session = Depends(get_session)):
+    row = db.query(PublicPacSnapshot).filter_by(year=year, status="published").order_by(PublicPacSnapshot.version.desc()).first()
+    if not row: raise HTTPException(404, "Snapshot público não encontrado")
+    return snapshot_payload(row)
 
 def approval_payload(db: Session, approval: DemandApproval):
     demand = db.get(Demand, approval.demand_id)
@@ -210,7 +224,7 @@ def system_readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
     catalog = integration_catalog()
     return {
-        "version": "0.10.0", "application": "ready_for_demonstration", "database": "available",
+        "version": "0.11.0", "application": "ready_for_demonstration", "database": "available",
         "data_classification": "fictitious_demo", "external_transmission_enabled": False,
         "integrations": {item["id"]: item["status"] for item in catalog},
         "institutional_dependencies": ["provedor de identidade", "autorização e WSDL do SEI-MPRJ", "homologação e credenciais do PNCP"],

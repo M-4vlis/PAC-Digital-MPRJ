@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.11.0 — Transparência e acessibilidade
+
+- Snapshot público imutável, versionado e verificável por hash SHA-256.
+- API pública de listagem e consulta da última posição publicada do PAC.
+- Minimização de dados no snapshot, sem números de processo SEI ou campos internos.
+- Nova visão de transparência com carteira, totais e prova de integridade.
+- Atalho de navegação, foco visível, região de avisos e preferência de movimento reduzido.
+- Migration `0005`, teste de integração e comando local de publicação.
+
 ## v0.10.0 — Inteligência histórica PNCP
 
 - Importador público e incremental de contratos do PNCP, restrito ao CNPJ do MPRJ.

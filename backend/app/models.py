@@ -1,5 +1,5 @@
 from datetime import date, datetime, UTC
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from .database import Base
 
@@ -127,6 +127,18 @@ class PncpSyncRun(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+class PublicPacSnapshot(Base):
+    __tablename__ = "public_pac_snapshots"
+    __table_args__ = (UniqueConstraint("year", "version", name="uq_public_pac_snapshot_year_version"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    year: Mapped[int] = mapped_column(Integer, index=True)
+    version: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(20), default="published")
+    payload: Mapped[str] = mapped_column(Text)
+    content_hash: Mapped[str] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    published_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
 class AuditEvent(Base):
     __tablename__ = "audit_events"

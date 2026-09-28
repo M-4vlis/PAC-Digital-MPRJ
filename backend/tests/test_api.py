@@ -13,7 +13,7 @@ def setup_module():
 
 def test_health():
     response = TestClient(app).get("/health")
-    assert response.status_code == 200 and response.json()["version"] == "0.10.0"
+    assert response.status_code == 200 and response.json()["version"] == "0.11.0"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert TestClient(app).get("/health/ready").json()["status"] == "ready"
 
@@ -24,6 +24,16 @@ def test_dashboard_and_exports():
     assert client.get("/api/exports/demands.csv").text.startswith("code,title")
     assert client.get("/api/exports/demands.json").status_code == 200
     assert client.get("/api/exports/demands.xlsx").headers["content-type"].startswith("application/vnd")
+
+def test_public_snapshot_is_versioned_and_verifiable():
+    client = TestClient(app)
+    listing = client.get("/api/public/pac/snapshots?year=2026")
+    assert listing.status_code == 200 and listing.json()
+    latest = client.get("/api/public/pac/latest?year=2026").json()
+    assert latest["version"] >= 1 and len(latest["content_hash"]) == 64
+    assert latest["data"]["data_classification"] == "fictitious_demo"
+    assert latest["data"]["summary"]["demands"] >= 6
+    assert all("sei_process_number" not in item for item in latest["data"]["demands"])
 
 def test_approved_review_creates_version():
     client=TestClient(app); item=client.get("/api/demands").json()[0]

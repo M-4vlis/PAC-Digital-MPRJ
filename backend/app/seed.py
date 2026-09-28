@@ -2,6 +2,8 @@ from datetime import date
 from sqlalchemy.orm import Session
 from .models import ApprovalDecision, ApprovalFlow, ApprovalStep, Demand, DemandApproval
 from .services import snapshot
+from .models import PublicPacSnapshot
+from .public_snapshot import publish_snapshot
 
 DEMO = [
  {"code":"PAC-2026-001","title":"Manutenção preventiva de sistemas de climatização","unit":"Diretoria de Operação e Manutenção","category":"services","desired_date":date(2026,8,1),"original_value":480000,"revised_value":495000,"adjusted_value":492000,"executed_value":492000,"loa_justification":"Adequação demonstrativa após aprovação da LOA.","execution_status":"contracted","pncp_item_code":"DEMO-001"},
@@ -36,3 +38,5 @@ def seed(db: Session):
             db.add(approval); db.flush()
             db.add(ApprovalDecision(approval_id=approval.id, step_id=strategic_steps[0].id, decision="approve", actor_role="requesting_unit", justification="Validação fictícia para demonstração."))
     db.commit()
+    if not db.query(PublicPacSnapshot).filter_by(year=2026).count():
+        publish_snapshot(db, 2026)

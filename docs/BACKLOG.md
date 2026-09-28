@@ -10,7 +10,7 @@
 ## Evolução de produto
 
 5. ~~Fluxos de aprovação configuráveis conforme autoridade vigente.~~ Entregue tecnicamente na v0.9; perfis e alçadas reais dependem de homologação.
-6. Publicação de snapshots no Portal da Transparência e revisão completa de acessibilidade.
+6. ~~Snapshot público versionado e primeira revisão de acessibilidade.~~ Entregue na v0.11; integração com o Portal da Transparência e auditoria institucional de acessibilidade dependem de homologação.
 7. Fila transacional de integrações, repetição segura e tratamento de indisponibilidade externa.
 8. ~~Calibração inicial do risco com dados públicos PNCP, preservando explicabilidade.~~ Entregue na v0.10 para a fase pública; ciclo interno completo depende de marcos autorizados do SEI.
 9. Testes ponta a ponta e de carga no ambiente de homologação.
