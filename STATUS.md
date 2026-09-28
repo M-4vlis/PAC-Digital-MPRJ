@@ -1,20 +1,20 @@
-# Status — v0.8.0
+# Status — v0.9.0
 
 **Situação:** candidata à demonstração executiva, implantada de forma controlada em VPS Oracle. O domínio do PAC está funcional; integrações externas e identidade institucional dependem de autorização e dados do MPRJ.
 
 ## Validado
 
-- Backend: 6 testes de integração aprovados.
-- Migrations: cadeia `0001 → 0002` aplicável em banco limpo.
+- Backend: 7 testes de integração aprovados.
+- Migrations: cadeia `0001 → 0003` aplicável em banco limpo.
 - Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 162 kB.
 - Interface em execução: visão executiva, carteira, detalhe da demanda, integrações e governança inspecionados no navegador.
 - Identidade visual: frontend harmonizado com o padrão observado no ecossistema VISÃO MPRJ, usando cabeçalho vinho, detalhe dourado, fundo marfim, navegação horizontal e cartões institucionais responsivos.
 - Banco para implantação: PostgreSQL 16 em composição Docker; SQLite continua disponível para desenvolvimento e demonstração local.
 - Segurança básica: cabeçalhos HTTP, healthcheck de prontidão, segredos fora do repositório e transmissões externas bloqueadas.
-- Implantação Oracle ARM64: imagens construídas na VPS, PostgreSQL saudável, migrations no head `0002`, acesso HTTPS protegido e seis demandas fictícias carregadas.
+- Implantação Oracle ARM64: imagens construídas na VPS, PostgreSQL saudável, acesso HTTPS protegido e seis demandas fictícias carregadas; atualização da v0.9 pendente da etapa de publicação.
 - Integração de borda: frontend conectado ao proxy compartilhado por alias exclusivo; banco e API permanecem na rede interna.
 
-## Entregue na v0.8
+## Entregue na v0.9
 
 - Nova interface executiva responsiva, com estados e rótulos em português.
 - Risco explicável por demanda, combinado com retroplanejamento não normativo.
@@ -25,6 +25,8 @@
 - Topologia de implantação `web → API → PostgreSQL`, com healthchecks.
 - Pipeline CI para testes e build.
 - Linguagem visual institucional aplicada sem copiar conteúdo protegido ou incorporar ativos da intranet.
+- Logotipo público oficial do MPRJ incorporado ao cabeçalho, com origem documentada.
+- Fluxos sequenciais de aprovação configuráveis, alçada opcional, decisão por perfil e auditoria de cada etapa.
 
 ## Dependências para uso institucional real
 

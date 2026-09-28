@@ -34,3 +34,11 @@ class BackplanRequest(BaseModel):
     desired_date: date
     category: str = "services"
     parameters: dict[str, int] | None = None
+
+class ApprovalStart(BaseModel):
+    flow_id: int = Field(gt=0)
+
+class ApprovalDecisionCreate(BaseModel):
+    decision: str = Field(pattern="^(approve|reject)$")
+    actor_role: str = Field(min_length=3, max_length=80)
+    justification: str | None = Field(None, max_length=3000)

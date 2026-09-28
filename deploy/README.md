@@ -23,4 +23,4 @@ docker compose \
 
 O proxy poderá encaminhar as requisições para `pac-digital-web:8080`. Banco e API continuam isolados na rede interna da aplicação.
 
-As variáveis SEI e PNCP apenas indicam prontidão de configuração. A v0.8 não transmite dados externos, mesmo quando valores forem informados.
+As variáveis SEI e PNCP apenas indicam prontidão de configuração. A v0.9 não transmite dados externos, mesmo quando valores forem informados.

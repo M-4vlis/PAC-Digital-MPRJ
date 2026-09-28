@@ -1,6 +1,6 @@
 from datetime import date
 from sqlalchemy.orm import Session
-from .models import Demand
+from .models import ApprovalDecision, ApprovalFlow, ApprovalStep, Demand, DemandApproval
 from .services import snapshot
 
 DEMO = [
@@ -13,7 +13,26 @@ DEMO = [
 ]
 
 def seed(db: Session):
-    if db.query(Demand).count(): return
-    for item in DEMO:
-        demand = Demand(**item); db.add(demand); db.flush(); snapshot(db, demand, "seed_created", "Registro fictício de demonstração v0.8.")
+    if not db.query(Demand).count():
+        for item in DEMO:
+            demand = Demand(**item); db.add(demand); db.flush(); snapshot(db, demand, "seed_created", "Registro fictício de demonstração v0.9.")
+    if not db.query(ApprovalFlow).count():
+        standard = ApprovalFlow(name="Fluxo padrão demonstrativo", description="Validação sequencial configurável para demandas ordinárias.")
+        strategic = ApprovalFlow(name="Fluxo estratégico demonstrativo", description="Etapa adicional para contratações de maior materialidade.", minimum_value=500000)
+        db.add_all([standard, strategic]); db.flush()
+        standard_steps = [
+            ApprovalStep(flow_id=standard.id, position=1, name="Validação da unidade", actor_role="requesting_unit"),
+            ApprovalStep(flow_id=standard.id, position=2, name="Análise de governança", actor_role="governance"),
+        ]
+        strategic_steps = [
+            ApprovalStep(flow_id=strategic.id, position=1, name="Validação da unidade", actor_role="requesting_unit"),
+            ApprovalStep(flow_id=strategic.id, position=2, name="Análise de governança", actor_role="governance"),
+            ApprovalStep(flow_id=strategic.id, position=3, name="Deliberação da autoridade", actor_role="authorizing_authority"),
+        ]
+        db.add_all(standard_steps + strategic_steps); db.flush()
+        demand = db.query(Demand).filter_by(code="PAC-2026-003").first()
+        if demand:
+            approval = DemandApproval(demand_id=demand.id, flow_id=strategic.id, current_position=2)
+            db.add(approval); db.flush()
+            db.add(ApprovalDecision(approval_id=approval.id, step_id=strategic_steps[0].id, decision="approve", actor_role="requesting_unit", justification="Validação fictícia para demonstração."))
     db.commit()

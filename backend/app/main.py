@@ -8,8 +8,8 @@ from openpyxl import Workbook
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from .database import Base, engine, get_session
-from .models import AuditEvent, Demand, DemandVersion, Review
-from .schemas import BackplanRequest, DemandCreate, LoaAdjustment, ReviewCreate, SeiLinkRequest, TransitionRequest
+from .models import ApprovalDecision, ApprovalFlow, ApprovalStep, AuditEvent, Demand, DemandApproval, DemandVersion, Review
+from .schemas import ApprovalDecisionCreate, ApprovalStart, BackplanRequest, DemandCreate, LoaAdjustment, ReviewCreate, SeiLinkRequest, TransitionRequest
 from .seed import seed
 from .services import EXECUTION_TRANSITIONS, backplan, csv_export, demand_payload, integration_catalog, pncp_payload, risk_assessment, sei_integration_plan, snapshot
 
@@ -21,7 +21,7 @@ async def lifespan(_: FastAPI):
     finally: db.close()
     yield
 
-app = FastAPI(title="PAC Digital MPRJ", version="0.8.0", description="API demonstrativa; dados estritamente fictícios.", lifespan=lifespan)
+app = FastAPI(title="PAC Digital MPRJ", version="0.9.0", description="API demonstrativa; dados estritamente fictícios.", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 
 @app.middleware("http")
@@ -39,12 +39,78 @@ def get_demand(db, demand_id):
     return demand
 
 @app.get("/health")
-def health(): return {"status":"ok", "version":"0.8.0", "data_classification":"fictitious_demo"}
+def health(): return {"status":"ok", "version":"0.9.0", "data_classification":"fictitious_demo"}
 
 @app.get("/health/ready")
 def readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
-    return {"status": "ready", "database": "available", "version": "0.8.0"}
+    return {"status": "ready", "database": "available", "version": "0.9.0"}
+
+def approval_payload(db: Session, approval: DemandApproval):
+    demand = db.get(Demand, approval.demand_id)
+    flow = db.get(ApprovalFlow, approval.flow_id)
+    steps = db.query(ApprovalStep).filter_by(flow_id=approval.flow_id).order_by(ApprovalStep.position).all()
+    decisions = db.query(ApprovalDecision).filter_by(approval_id=approval.id).order_by(ApprovalDecision.decided_at).all()
+    decided = {item.step_id: item for item in decisions}
+    return {
+        "id": approval.id, "status": approval.status, "current_position": approval.current_position,
+        "demand_id": demand.id, "demand_code": demand.code, "demand_title": demand.title,
+        "flow_id": flow.id, "flow_name": flow.name,
+        "started_at": approval.started_at.isoformat(), "completed_at": approval.completed_at.isoformat() if approval.completed_at else None,
+        "steps": [{"id": step.id, "position": step.position, "name": step.name, "actor_role": step.actor_role,
+                   "status": "approved" if step.id in decided and decided[step.id].decision == "approve" else "rejected" if step.id in decided else "current" if approval.status == "pending" and step.position == approval.current_position else "pending"}
+                  for step in steps],
+    }
+
+@app.get("/api/approval-flows")
+def approval_flows(db: Session = Depends(get_session)):
+    flows = db.query(ApprovalFlow).filter_by(active=True).order_by(ApprovalFlow.id).all()
+    return [{"id": flow.id, "name": flow.name, "description": flow.description, "category": flow.category,
+             "minimum_value": float(flow.minimum_value) if flow.minimum_value is not None else None,
+             "steps": [{"position": step.position, "name": step.name, "actor_role": step.actor_role} for step in db.query(ApprovalStep).filter_by(flow_id=flow.id).order_by(ApprovalStep.position).all()],
+             "non_normative_notice": "Fluxo demonstrativo configurável; autoridades e alçadas dependem de homologação institucional."} for flow in flows]
+
+@app.get("/api/approvals")
+def approvals(status: str | None = None, db: Session = Depends(get_session)):
+    query = db.query(DemandApproval)
+    if status: query = query.filter_by(status=status)
+    return [approval_payload(db, item) for item in query.order_by(DemandApproval.started_at.desc()).all()]
+
+@app.post("/api/demands/{demand_id}/approvals", status_code=201)
+def start_approval(demand_id: int, body: ApprovalStart, db: Session = Depends(get_session)):
+    demand = get_demand(db, demand_id)
+    flow = db.get(ApprovalFlow, body.flow_id)
+    if not flow or not flow.active: raise HTTPException(404, "Fluxo de aprovação não encontrado")
+    if db.query(DemandApproval).filter_by(demand_id=demand.id, status="pending").first(): raise HTTPException(409, "Demanda já possui aprovação pendente")
+    if flow.category and flow.category != demand.category: raise HTTPException(422, "Fluxo não se aplica à categoria da demanda")
+    amount = float(demand.adjusted_value or demand.revised_value or demand.original_value)
+    if flow.minimum_value is not None and amount < float(flow.minimum_value): raise HTTPException(422, "Demanda abaixo da alçada mínima configurada")
+    approval = DemandApproval(demand_id=demand.id, flow_id=flow.id)
+    db.add(approval); db.flush()
+    db.add(AuditEvent(demand_id=demand.id, action="approval_started", detail=f"Fluxo '{flow.name}' iniciado em modo demonstrativo."))
+    db.commit(); db.refresh(approval)
+    return approval_payload(db, approval)
+
+@app.post("/api/approvals/{approval_id}/decisions")
+def decide_approval(approval_id: int, body: ApprovalDecisionCreate, db: Session = Depends(get_session)):
+    approval = db.get(DemandApproval, approval_id)
+    if not approval: raise HTTPException(404, "Aprovação não encontrada")
+    if approval.status != "pending": raise HTTPException(409, "Aprovação já foi encerrada")
+    step = db.query(ApprovalStep).filter_by(flow_id=approval.flow_id, position=approval.current_position).first()
+    if not step: raise HTTPException(409, "Etapa atual inválida")
+    if body.actor_role != step.actor_role: raise HTTPException(403, "Perfil não autorizado para a etapa atual")
+    if body.decision == "reject" and (not body.justification or len(body.justification.strip()) < 10): raise HTTPException(422, "Rejeição exige justificativa")
+    db.add(ApprovalDecision(approval_id=approval.id, step_id=step.id, decision=body.decision, actor_role=body.actor_role, justification=body.justification))
+    demand = get_demand(db, approval.demand_id)
+    if body.decision == "reject":
+        approval.status = "rejected"; approval.completed_at = datetime.now(UTC).replace(tzinfo=None)
+    else:
+        next_step = db.query(ApprovalStep).filter_by(flow_id=approval.flow_id, position=approval.current_position + 1).first()
+        if next_step: approval.current_position += 1
+        else: approval.status = "approved"; approval.completed_at = datetime.now(UTC).replace(tzinfo=None)
+    db.add(AuditEvent(demand_id=demand.id, action=f"approval_{body.decision}", actor_role=body.actor_role, detail=body.justification or f"Etapa '{step.name}' aprovada."))
+    db.commit(); db.refresh(approval)
+    return approval_payload(db, approval)
 
 @app.get("/api/demands")
 def demands(db: Session = Depends(get_session)):
@@ -138,7 +204,7 @@ def system_readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
     catalog = integration_catalog()
     return {
-        "version": "0.8.0", "application": "ready_for_demonstration", "database": "available",
+        "version": "0.9.0", "application": "ready_for_demonstration", "database": "available",
         "data_classification": "fictitious_demo", "external_transmission_enabled": False,
         "integrations": {item["id"]: item["status"] for item in catalog},
         "institutional_dependencies": ["provedor de identidade", "autorização e WSDL do SEI-MPRJ", "homologação e credenciais do PNCP"],

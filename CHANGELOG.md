@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.0 — Aprovação configurável e identidade institucional
+
+- Logotipo público oficial do MPRJ aplicado ao cabeçalho da aplicação.
+- Modelos e migration para fluxos, etapas, instâncias e decisões de aprovação.
+- APIs para consultar fluxos, iniciar aprovação e decidir etapas com validação de perfil.
+- Rejeições exigem justificativa; decisões e início do fluxo são registrados na auditoria.
+- Painel de governança passa a exibir o progresso sequencial de cada demanda.
+- Dataset fictício inclui dois fluxos demonstrativos, sem presumir autoridades ou alçadas reais.
+- Testes de integração ampliados e migration validada em banco limpo.
+
 ## v0.8.0 — Candidata à demonstração executiva
 
 - Interface redesenhada com visão executiva, carteira pesquisável, integrações e governança.

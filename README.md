@@ -2,9 +2,9 @@
 
 Plataforma open source e portátil para governança do Plano Anual de Contratações do MPRJ. Centraliza planejamento, revisões, execução, riscos, adequações pós-LOA, auditoria e preparação de integrações com SEI! e PCA/PNCP.
 
-> O repositório utiliza exclusivamente dados e perfis fictícios. A v0.8 não transmite informações ao SEI ou ao PNCP.
+> O repositório utiliza exclusivamente dados e perfis fictícios. A v0.9 não transmite informações ao SEI ou ao PNCP.
 
-## Capacidades da v0.8
+## Capacidades da v0.9
 
 - painel executivo planejado × executado, riscos e movimentações críticas;
 - carteira de demandas com fluxo de execução, histórico e versionamento;
@@ -46,6 +46,7 @@ Consulte [deploy/README.md](deploy/README.md). A composição de produção usa 
 - [Status atual](STATUS.md)
 - [Roteiro de demonstração executiva](docs/ROTEIRO-DEMONSTRACAO.md)
 - [Vertical v0.8](docs/21-vertical-v0.8.md)
+- [Vertical v0.9](docs/23-vertical-v0.9.md)
 - [Integração SEI](docs/20-integracao-sei.md)
 - [Backlog](docs/BACKLOG.md)
 - [Política de segurança](SECURITY.md)

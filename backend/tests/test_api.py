@@ -10,7 +10,7 @@ def setup_module():
 
 def test_health():
     response = TestClient(app).get("/health")
-    assert response.status_code == 200 and response.json()["version"] == "0.8.0"
+    assert response.status_code == 200 and response.json()["version"] == "0.9.0"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert TestClient(app).get("/health/ready").json()["status"] == "ready"
 
@@ -65,3 +65,18 @@ def test_executive_readiness_integrations_and_audit():
     assert 1 <= len(events) <= 5 and events[0]["demand_code"].startswith("PAC-")
     demands = client.get("/api/demands").json()
     assert all(item["risk"]["level"] in {"low", "medium", "high"} for item in demands)
+
+def test_configurable_sequential_approval_flow():
+    client = TestClient(app)
+    flows = client.get("/api/approval-flows").json()
+    standard = next(flow for flow in flows if len(flow["steps"]) == 2)
+    demand = client.post("/api/demands", json={"title":"Serviço fictício sujeito a aprovação","unit":"Unidade Demonstrativa","category":"services","desired_date":"2027-06-01","original_value":200000}).json()
+    started = client.post(f"/api/demands/{demand['id']}/approvals", json={"flow_id":standard["id"]})
+    assert started.status_code == 201 and started.json()["steps"][0]["status"] == "current"
+    approval_id = started.json()["id"]
+    forbidden = client.post(f"/api/approvals/{approval_id}/decisions", json={"decision":"approve","actor_role":"governance"})
+    assert forbidden.status_code == 403
+    first = client.post(f"/api/approvals/{approval_id}/decisions", json={"decision":"approve","actor_role":"requesting_unit"})
+    assert first.status_code == 200 and first.json()["current_position"] == 2
+    final = client.post(f"/api/approvals/{approval_id}/decisions", json={"decision":"approve","actor_role":"governance"})
+    assert final.status_code == 200 and final.json()["status"] == "approved"
