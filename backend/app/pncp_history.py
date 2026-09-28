@@ -125,7 +125,7 @@ def sync_history(db: Session, start_year: int, end_year: int, enrich_limit: int 
             run.enriched += 1
             if run.enriched % 25 == 0: db.commit()
             if request_delay: time.sleep(request_delay)
-        run.status = "completed_with_warnings" if warnings else "completed"
+        run.status = "partial" if warnings else "completed"
         run.error = "; ".join(warnings[:20]) or None
         run.finished_at = datetime.now(UTC).replace(tzinfo=None)
         db.commit(); db.refresh(run)

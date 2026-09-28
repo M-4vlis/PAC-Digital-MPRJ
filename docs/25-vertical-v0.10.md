@@ -19,6 +19,6 @@ O PNCP não substitui os marcos internos do SEI. Portanto, as referências hist�
 
 `python -m app.pncp_sync --start-year 2022 --end-year 2026 --enrich-limit 250`
 
-O coletor faz upsert por número de controle PNCP, preserva hash e URL de origem e pode ser executado novamente. Limites `429` e indisponibilidades temporárias geram espera, repetição e retomada posterior.
+O coletor faz upsert por número de controle PNCP, preserva hash e URL de origem e pode ser executado novamente. Limites `429` e indisponibilidades temporárias geram espera, estado parcial e retomada posterior.
 
 O risco usa o P75 de sua categoria apenas quando existem ao menos dez observações temporais válidas. A razão, o tamanho da amostra e o prazo histórico são incluídos na explicação do alerta.
