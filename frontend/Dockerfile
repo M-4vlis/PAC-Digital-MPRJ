@@ -6,6 +6,7 @@ COPY types ./types
 RUN npm install --global pnpm@10.18.3 && pnpm install --frozen-lockfile
 COPY index.html tsconfig.json tsconfig.node.json vite.config.ts ./
 COPY src ./src
+COPY public ./public
 RUN pnpm build
 
 FROM nginx:1.27-alpine
