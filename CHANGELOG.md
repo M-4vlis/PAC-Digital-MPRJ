@@ -12,6 +12,8 @@
 - Dockerfile do frontend corrigido para instalação reprodutível com o lockfile pnpm.
 - Implantação controlada validada em Oracle ARM64, com proxy HTTPS protegido e rede de borda opcional.
 - Alias interno exclusivo para impedir colisões entre APIs de diferentes pilhas Docker.
+- Frontend harmonizado com a linguagem visual do ecossistema VISÃO MPRJ: vinho institucional, detalhe dourado, fundo marfim, navegação horizontal e cartões de baixa elevação.
+- Referência visual aplicada sem armazenar credenciais, capturas ou ativos protegidos da intranet no repositório.
 
 ## v0.7.0 — Vertical utilizável e preparação SEI
 

@@ -8,6 +8,7 @@
 - Migrations: cadeia `0001 → 0002` aplicável em banco limpo.
 - Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 162 kB.
 - Interface em execução: visão executiva, carteira, detalhe da demanda, integrações e governança inspecionados no navegador.
+- Identidade visual: frontend harmonizado com o padrão observado no ecossistema VISÃO MPRJ, usando cabeçalho vinho, detalhe dourado, fundo marfim, navegação horizontal e cartões institucionais responsivos.
 - Banco para implantação: PostgreSQL 16 em composição Docker; SQLite continua disponível para desenvolvimento e demonstração local.
 - Segurança básica: cabeçalhos HTTP, healthcheck de prontidão, segredos fora do repositório e transmissões externas bloqueadas.
 - Implantação Oracle ARM64: imagens construídas na VPS, PostgreSQL saudável, migrations no head `0002`, acesso HTTPS protegido e seis demandas fictícias carregadas.
@@ -23,6 +24,7 @@
 - Diagnóstico operacional e endpoints de saúde/prontidão.
 - Topologia de implantação `web → API → PostgreSQL`, com healthchecks.
 - Pipeline CI para testes e build.
+- Linguagem visual institucional aplicada sem copiar conteúdo protegido ou incorporar ativos da intranet.
 
 ## Dependências para uso institucional real
 
