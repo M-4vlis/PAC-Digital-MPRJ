@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.12.0 — Relatórios executivos
+
+- Relatório executivo em PDF, gerado localmente e sem serviço externo.
+- Workbook XLSX com resumo institucional e carteira filtrável.
+- Endpoints de download com tipos de conteúdo e nomes de arquivo adequados.
+- Testes de integração verificam as assinaturas binárias PDF e XLSX.
+
 ## v0.11.0 — Transparência e acessibilidade
 
 - Snapshot público imutável, versionado e verificável por hash SHA-256.

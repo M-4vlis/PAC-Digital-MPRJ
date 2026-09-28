@@ -13,7 +13,7 @@ def setup_module():
 
 def test_health():
     response = TestClient(app).get("/health")
-    assert response.status_code == 200 and response.json()["version"] == "0.11.0"
+    assert response.status_code == 200 and response.json()["version"] == "0.12.0"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert TestClient(app).get("/health/ready").json()["status"] == "ready"
 
@@ -24,6 +24,10 @@ def test_dashboard_and_exports():
     assert client.get("/api/exports/demands.csv").text.startswith("code,title")
     assert client.get("/api/exports/demands.json").status_code == 200
     assert client.get("/api/exports/demands.xlsx").headers["content-type"].startswith("application/vnd")
+    pdf = client.get("/api/reports/executive.pdf")
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF-1.4")
+    report = client.get("/api/reports/executive.xlsx")
+    assert report.status_code == 200 and report.content.startswith(b"PK")
 
 def test_public_snapshot_is_versioned_and_verifiable():
     client = TestClient(app)

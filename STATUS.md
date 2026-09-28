@@ -1,4 +1,4 @@
-# Status — v0.11.0
+# Status — v0.12.0
 
 **Situação:** candidata à demonstração executiva, implantada de forma controlada em VPS Oracle. O domínio do PAC está funcional; integrações externas e identidade institucional dependem de autorização e dados do MPRJ.
 
@@ -42,6 +42,12 @@
 - Minimização de dados, sem identificadores de processo SEI na publicação.
 - Melhorias de acessibilidade para teclado, foco, mensagens e movimento reduzido.
 - Validação visual em produção concluída sem erros de console: snapshot v1, hash e seis demandas demonstrativas exibidos corretamente.
+
+## Entregue na v0.12
+
+- Relatório executivo PDF autônomo para apresentação e arquivamento.
+- Planilha XLSX executiva com resumo, identidade de cores e carteira filtrável.
+- Geração local, sem dependência de SaaS, com validação automatizada dos arquivos.
 
 ## Dependências para uso institucional real
 

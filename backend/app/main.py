@@ -14,6 +14,7 @@ from .seed import seed
 from .services import EXECUTION_TRANSITIONS, backplan, csv_export, demand_payload, integration_catalog, pncp_payload, risk_assessment, sei_integration_plan, snapshot
 from .pncp_history import category_benchmarks, historical_metrics
 from .public_snapshot import snapshot_payload
+from .reports import executive_pdf, executive_xlsx
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -23,7 +24,7 @@ async def lifespan(_: FastAPI):
     finally: db.close()
     yield
 
-app = FastAPI(title="PAC Digital MPRJ", version="0.11.0", description="API demonstrativa com inteligência PNCP e transparência verificável.", lifespan=lifespan)
+app = FastAPI(title="PAC Digital MPRJ", version="0.12.0", description="API demonstrativa com inteligência PNCP, transparência e relatórios executivos.", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 
 @app.middleware("http")
@@ -41,12 +42,12 @@ def get_demand(db, demand_id):
     return demand
 
 @app.get("/health")
-def health(): return {"status":"ok", "version":"0.11.0", "data_classification":"fictitious_demo_with_public_pncp_history"}
+def health(): return {"status":"ok", "version":"0.12.0", "data_classification":"fictitious_demo_with_public_pncp_history"}
 
 @app.get("/health/ready")
 def readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
-    return {"status": "ready", "database": "available", "version": "0.11.0"}
+    return {"status": "ready", "database": "available", "version": "0.12.0"}
 
 @app.get("/api/public/pac/snapshots")
 def public_snapshots(year: int | None = None, db: Session = Depends(get_session)):
@@ -224,7 +225,7 @@ def system_readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
     catalog = integration_catalog()
     return {
-        "version": "0.11.0", "application": "ready_for_demonstration", "database": "available",
+        "version": "0.12.0", "application": "ready_for_demonstration", "database": "available",
         "data_classification": "fictitious_demo", "external_transmission_enabled": False,
         "integrations": {item["id"]: item["status"] for item in catalog},
         "institutional_dependencies": ["provedor de identidade", "autorização e WSDL do SEI-MPRJ", "homologação e credenciais do PNCP"],
@@ -246,6 +247,13 @@ def dashboard(db: Session = Depends(get_session)):
     risk = sum(item["level"] == "high" for item in risks)
     status_distribution = {status: sum(x.execution_status == status for x in rows) for status in EXECUTION_TRANSITIONS}
     return {"planned_value":planned,"executed_value":executed,"execution_rate":round(executed/planned*100,2) if planned else 0,"demands":len(rows),"altered_demands":altered,"risk_demands":risk,"medium_risk_demands":sum(item["level"] == "medium" for item in risks),"extraordinary_inclusions":sum(x.extraordinary for x in rows),"cancelled":sum(x.execution_status=="cancelled" for x in rows),"reprogrammed":sum(x.execution_status=="reprogrammed" for x in rows),"status_distribution":status_distribution,"notice":"Indicadores demonstrativos com dados fictícios; não correspondem a execução institucional."}
+
+@app.get("/api/reports/executive.{format}")
+def executive_report(format: str, db: Session = Depends(get_session)):
+    rows = db.query(Demand).order_by(Demand.code).all(); metrics = dashboard(db)
+    if format == "pdf": return Response(executive_pdf(metrics, rows), media_type="application/pdf", headers={"Content-Disposition":"attachment; filename=PAC-Digital-MPRJ-Relatorio-Executivo.pdf"})
+    if format == "xlsx": return Response(executive_xlsx(metrics, rows), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition":"attachment; filename=PAC-Digital-MPRJ-Relatorio-Executivo.xlsx"})
+    raise HTTPException(404, "Formato suportado: pdf, xlsx")
 
 @app.get("/api/exports/demands.{format}")
 def export_demands(format: str, db: Session = Depends(get_session)):
