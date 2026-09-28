@@ -1,16 +1,19 @@
 import os, tempfile
+import httpx
 from fastapi.testclient import TestClient
 
 TEST_DB = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
 os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB}"
 from app.main import app
+from app.database import SessionLocal
+from app.pncp_history import MPRJ_CNPJ, sync_history
 
 def setup_module():
     with TestClient(app): pass
 
 def test_health():
     response = TestClient(app).get("/health")
-    assert response.status_code == 200 and response.json()["version"] == "0.9.0"
+    assert response.status_code == 200 and response.json()["version"] == "0.10.0"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert TestClient(app).get("/health/ready").json()["status"] == "ready"
 
@@ -80,3 +83,28 @@ def test_configurable_sequential_approval_flow():
     assert first.status_code == 200 and first.json()["current_position"] == 2
     final = client.post(f"/api/approvals/{approval_id}/decisions", json={"decision":"approve","actor_role":"governance"})
     assert final.status_code == 200 and final.json()["status"] == "approved"
+
+def test_pncp_public_history_is_restricted_and_explainable():
+    contracts = [{
+        "numeroControlePNCP": f"{MPRJ_CNPJ}-2-{index:06d}/2025",
+        "numeroControlePncpCompra": f"{MPRJ_CNPJ}-1-{index:06d}/2025",
+        "numeroContratoEmpenho": str(index), "anoContrato": 2025,
+        "categoriaProcesso": {"nome": "Serviços"}, "objetoContrato": f"Contrato público fictício {index}",
+        "unidadeOrgao": {"codigoUnidade": "1", "nomeUnidade": "MPRJ"}, "valorInicial": 1000 * index,
+        "dataAssinatura": "2025-08-01", "dataPublicacaoPncp": "2025-08-02T10:00:00",
+    } for index in range(1, 13)]
+    def handler(request: httpx.Request):
+        if request.url.path.endswith("/contratos"):
+            assert request.url.params["cnpjOrgao"] == MPRJ_CNPJ
+            return httpx.Response(200, json={"data": contracts, "totalPaginas": 1})
+        return httpx.Response(200, json={"modalidadeNome":"Pregão - Eletrônico","dataPublicacaoPncp":"2025-01-01T10:00:00","dataAberturaProposta":"2025-01-02T10:00:00","dataEncerramentoProposta":"2025-01-15T10:00:00"})
+    with SessionLocal() as db, httpx.Client(transport=httpx.MockTransport(handler)) as mocked:
+        result = sync_history(db, 2025, 2025, enrich_limit=12, client=mocked, request_delay=0)
+    assert result["status"] == "completed" and result["inserted"] == 12 and result["enriched"] == 12
+    metrics = TestClient(app).get("/api/pncp/history/metrics").json()
+    services = next(item for item in metrics["categories"] if item["category"] == "services")
+    assert metrics["source_cnpj"] == MPRJ_CNPJ and services["sample_size"] >= 12
+    client = TestClient(app)
+    created = client.post("/api/demands", json={"title":"Serviço para risco histórico","unit":"Unidade Demonstrativa","category":"services","desired_date":"2027-09-01","original_value":100000}).json()
+    demand = client.get(f"/api/demands/{created['id']}").json()
+    assert demand["risk"]["historical_reference"]["sample_size"] >= 12

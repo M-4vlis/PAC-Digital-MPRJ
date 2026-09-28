@@ -15,7 +15,7 @@ DEMO = [
 def seed(db: Session):
     if not db.query(Demand).count():
         for item in DEMO:
-            demand = Demand(**item); db.add(demand); db.flush(); snapshot(db, demand, "seed_created", "Registro fictício de demonstração v0.9.")
+            demand = Demand(**item); db.add(demand); db.flush(); snapshot(db, demand, "seed_created", "Registro fictício de demonstração v0.10.")
     if not db.query(ApprovalFlow).count():
         standard = ApprovalFlow(name="Fluxo padrão demonstrativo", description="Validação sequencial configurável para demandas ordinárias.")
         strategic = ApprovalFlow(name="Fluxo estratégico demonstrativo", description="Etapa adicional para contratações de maior materialidade.", minimum_value=500000)

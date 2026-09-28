@@ -28,7 +28,7 @@ def pncp_payload(demand: Demand):
     if demand.extraordinary and not demand.change_justification: errors.append("inclusão extraordinária exige justificativa.")
     return {"valid": not errors, "publishable": False, "notice": "Payload de pré-validação. Não envia dados ao PNCP e não usa credenciais.", "payload": {"anoPca": demand.desired_date.year, "itens": [item]}, "errors": errors}
 
-def risk_assessment(demand: Demand, reference_date: date | None = None):
+def risk_assessment(demand: Demand, reference_date: date | None = None, historical: dict | None = None):
     reference = reference_date or date.today()
     if demand.execution_status in {"contracted", "cancelled"}:
         return {"level": "low", "label": "Baixo", "reasons": ["Fluxo encerrado."]}
@@ -46,8 +46,13 @@ def risk_assessment(demand: Demand, reference_date: date | None = None):
         score += 1; reasons.append("Processo SEI ainda não vinculado.")
     if demand.desired_date < reference and demand.execution_status not in {"contracted", "cancelled"}:
         score += 2; reasons.append("Data desejada já ultrapassada.")
+    benchmark = (historical or {}).get(demand.category)
+    remaining_days = (demand.desired_date - reference).days
+    if benchmark and demand.execution_status in {"not_started", "preparatory", "contracting", "reprogrammed"} and remaining_days >= 0 and remaining_days < benchmark["p75_days"]:
+        score += 2
+        reasons.append(f"Prazo disponível de {remaining_days} dias abaixo do P75 histórico de {benchmark['p75_days']} dias na fase pública ({benchmark['sample_size']} contratos PNCP do MPRJ).")
     level, label = ("high", "Alto") if score >= 4 else (("medium", "Médio") if score >= 2 else ("low", "Baixo"))
-    return {"level": level, "label": label, "score": score, "reasons": reasons or ["Sem alerta relevante pelos parâmetros demonstrativos."]}
+    return {"level": level, "label": label, "score": score, "reasons": reasons or ["Sem alerta relevante pelos parâmetros demonstrativos."], "historical_reference": benchmark}
 
 def integration_catalog():
     sei_wsdl = bool(os.getenv("SEI_WSDL_URL"))

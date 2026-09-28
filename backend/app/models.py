@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import date, datetime, UTC
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from .database import Base
@@ -88,6 +88,45 @@ class ApprovalDecision(Base):
     actor_role: Mapped[str] = mapped_column(String(80))
     justification: Mapped[str | None] = mapped_column(Text, nullable=True)
     decided_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+class PncpHistoricalContract(Base):
+    __tablename__ = "pncp_historical_contracts"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pncp_control_number: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    purchase_control_number: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    contract_number: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    contract_year: Mapped[int] = mapped_column(Integer)
+    category: Mapped[str] = mapped_column(String(60), index=True)
+    category_source: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    modality: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    object_description: Mapped[str] = mapped_column(Text)
+    unit_code: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    unit_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    initial_value: Mapped[float] = mapped_column(Numeric(18, 4), default=0)
+    signature_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    contract_publication_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    purchase_publication_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    proposal_opening_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    proposal_closing_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    public_phase_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    source_url: Mapped[str] = mapped_column(String(500))
+    source_hash: Mapped[str] = mapped_column(String(64))
+    imported_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+class PncpSyncRun(Base):
+    __tablename__ = "pncp_sync_runs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    status: Mapped[str] = mapped_column(String(20), default="running")
+    start_year: Mapped[int] = mapped_column(Integer)
+    end_year: Mapped[int] = mapped_column(Integer)
+    records_seen: Mapped[int] = mapped_column(Integer, default=0)
+    inserted: Mapped[int] = mapped_column(Integer, default=0)
+    updated: Mapped[int] = mapped_column(Integer, default=0)
+    enriched: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 class AuditEvent(Base):
     __tablename__ = "audit_events"

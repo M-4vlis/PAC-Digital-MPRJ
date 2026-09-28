@@ -2,7 +2,7 @@
 
 ## Estado da versão
 
-A v0.9 é uma candidata de demonstração, exclusivamente com dados fictícios. Não deve receber dados internos reais nem ser exposta publicamente sem autenticação, HTTPS, backup e monitoração.
+A v0.10 é uma candidata de demonstração: a carteira contém dados fictícios e a inteligência histórica contém apenas dados abertos do PNCP. Não deve receber dados internos reais nem ser exposta publicamente sem autenticação, HTTPS, backup e monitoração.
 
 ## Segredos
 

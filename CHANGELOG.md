@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.10.0 — Inteligência histórica PNCP
+
+- Importador público e incremental de contratos do PNCP, restrito ao CNPJ do MPRJ.
+- Persistência separada com proveniência, hash e rastreabilidade de sincronizações.
+- Enriquecimento por contratação vinculada, sem armazenar fornecedores.
+- Métricas P50, P75 e P90 da fase entre publicação da contratação e assinatura.
+- Referência P75 integrada ao risco de forma explicável e somente com amostra mínima.
+- Painel “Inteligência PNCP” distingue claramente carteira fictícia e histórico público real.
+- Tolerância a `429` e indisponibilidades externas, com retomada incremental.
+- Roadmap fechado e data-alvo da v1.0 registrados no repositório.
+
 ## v0.9.0 — Aprovação configurável e identidade institucional
 
 - Logotipo público oficial do MPRJ aplicado ao cabeçalho da aplicação.

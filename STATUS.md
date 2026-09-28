@@ -1,20 +1,20 @@
-# Status — v0.9.0
+# Status — v0.10.0
 
 **Situação:** candidata à demonstração executiva, implantada de forma controlada em VPS Oracle. O domínio do PAC está funcional; integrações externas e identidade institucional dependem de autorização e dados do MPRJ.
 
 ## Validado
 
-- Backend: 7 testes de integração aprovados.
-- Migrations: cadeia `0001 → 0003` aplicável em banco limpo.
-- Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 162 kB.
+- Backend: 8 testes de integração aprovados.
+- Migrations: cadeia `0001 → 0004` aplicável em banco limpo.
+- Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 167 kB.
 - Interface em execução: visão executiva, carteira, detalhe da demanda, integrações e governança inspecionados no navegador.
 - Identidade visual: frontend harmonizado com o padrão observado no ecossistema VISÃO MPRJ, usando cabeçalho vinho, detalhe dourado, fundo marfim, navegação horizontal e cartões institucionais responsivos.
 - Banco para implantação: PostgreSQL 16 em composição Docker; SQLite continua disponível para desenvolvimento e demonstração local.
 - Segurança básica: cabeçalhos HTTP, healthcheck de prontidão, segredos fora do repositório e transmissões externas bloqueadas.
-- Implantação Oracle ARM64: v0.9 publicada, PostgreSQL saudável no head `0003`, acesso HTTPS protegido e seis demandas fictícias carregadas.
+- Implantação Oracle ARM64: v0.9 ativa; publicação da v0.10 ocorre após sincronização e validação final desta entrega.
 - Integração de borda: frontend conectado ao proxy compartilhado por alias exclusivo; banco e API permanecem na rede interna.
 
-## Entregue na v0.9
+## Entregue na v0.10
 
 - Nova interface executiva responsiva, com estados e rótulos em português.
 - Risco explicável por demanda, combinado com retroplanejamento não normativo.
@@ -27,6 +27,11 @@
 - Linguagem visual institucional aplicada sem copiar conteúdo protegido ou incorporar ativos da intranet.
 - Logotipo público oficial do MPRJ incorporado ao cabeçalho, com origem documentada.
 - Fluxos sequenciais de aprovação configuráveis, alçada opcional, decisão por perfil e auditoria de cada etapa.
+- Coletor incremental do PNCP limitado por código ao CNPJ do MPRJ, sem credenciais e em modo somente leitura.
+- Base histórica separada da carteira operacional, com URL de origem, hash, data de importação e execução da sincronização.
+- Minimização: identificadores e nomes de fornecedores não são armazenados.
+- P50, P75 e P90 por categoria e referência histórica incorporada ao risco quando a amostra é suficiente.
+- Tratamento de limites e indisponibilidade do PNCP com repetição progressiva, retomada e conclusão parcial segura.
 
 ## Dependências para uso institucional real
 

@@ -12,6 +12,7 @@ from .models import ApprovalDecision, ApprovalFlow, ApprovalStep, AuditEvent, De
 from .schemas import ApprovalDecisionCreate, ApprovalStart, BackplanRequest, DemandCreate, LoaAdjustment, ReviewCreate, SeiLinkRequest, TransitionRequest
 from .seed import seed
 from .services import EXECUTION_TRANSITIONS, backplan, csv_export, demand_payload, integration_catalog, pncp_payload, risk_assessment, sei_integration_plan, snapshot
+from .pncp_history import category_benchmarks, historical_metrics
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -21,7 +22,7 @@ async def lifespan(_: FastAPI):
     finally: db.close()
     yield
 
-app = FastAPI(title="PAC Digital MPRJ", version="0.9.0", description="API demonstrativa; dados estritamente fictícios.", lifespan=lifespan)
+app = FastAPI(title="PAC Digital MPRJ", version="0.10.0", description="API demonstrativa com inteligência derivada de dados públicos do PNCP.", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 
 @app.middleware("http")
@@ -39,12 +40,12 @@ def get_demand(db, demand_id):
     return demand
 
 @app.get("/health")
-def health(): return {"status":"ok", "version":"0.9.0", "data_classification":"fictitious_demo"}
+def health(): return {"status":"ok", "version":"0.10.0", "data_classification":"fictitious_demo_with_public_pncp_history"}
 
 @app.get("/health/ready")
 def readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
-    return {"status": "ready", "database": "available", "version": "0.9.0"}
+    return {"status": "ready", "database": "available", "version": "0.10.0"}
 
 def approval_payload(db: Session, approval: DemandApproval):
     demand = db.get(Demand, approval.demand_id)
@@ -114,7 +115,8 @@ def decide_approval(approval_id: int, body: ApprovalDecisionCreate, db: Session 
 
 @app.get("/api/demands")
 def demands(db: Session = Depends(get_session)):
-    return [{**demand_payload(d), "risk": risk_assessment(d)} for d in db.query(Demand).order_by(Demand.code).all()]
+    benchmarks = category_benchmarks(db)
+    return [{**demand_payload(d), "risk": risk_assessment(d, historical=benchmarks)} for d in db.query(Demand).order_by(Demand.code).all()]
 
 @app.post("/api/demands", status_code=201)
 def create_demand(body: DemandCreate, db: Session = Depends(get_session)):
@@ -128,7 +130,11 @@ def create_demand(body: DemandCreate, db: Session = Depends(get_session)):
 @app.get("/api/demands/{demand_id}")
 def demand(demand_id: int, db: Session = Depends(get_session)):
     item = get_demand(db, demand_id)
-    return {**demand_payload(item), "risk": risk_assessment(item)}
+    return {**demand_payload(item), "risk": risk_assessment(item, historical=category_benchmarks(db))}
+
+@app.get("/api/pncp/history/metrics")
+def pncp_history_metrics(db: Session = Depends(get_session)):
+    return historical_metrics(db)
 
 @app.get("/api/demands/{demand_id}/versions")
 def versions(demand_id: int, db: Session = Depends(get_session)):
@@ -204,7 +210,7 @@ def system_readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
     catalog = integration_catalog()
     return {
-        "version": "0.9.0", "application": "ready_for_demonstration", "database": "available",
+        "version": "0.10.0", "application": "ready_for_demonstration", "database": "available",
         "data_classification": "fictitious_demo", "external_transmission_enabled": False,
         "integrations": {item["id"]: item["status"] for item in catalog},
         "institutional_dependencies": ["provedor de identidade", "autorização e WSDL do SEI-MPRJ", "homologação e credenciais do PNCP"],
@@ -221,7 +227,8 @@ def audit_events(limit: int = 50, db: Session = Depends(get_session)):
 def dashboard(db: Session = Depends(get_session)):
     rows = db.query(Demand).all(); planned = sum(float(x.adjusted_value or x.revised_value or x.original_value) for x in rows); executed = sum(float(x.executed_value) for x in rows)
     altered = sum(1 for x in rows if x.version > 1 or x.revised_value is not None or x.adjusted_value is not None)
-    risks = [risk_assessment(x) for x in rows]
+    benchmarks = category_benchmarks(db)
+    risks = [risk_assessment(x, historical=benchmarks) for x in rows]
     risk = sum(item["level"] == "high" for item in risks)
     status_distribution = {status: sum(x.execution_status == status for x in rows) for status in EXECUTION_TRANSITIONS}
     return {"planned_value":planned,"executed_value":executed,"execution_rate":round(executed/planned*100,2) if planned else 0,"demands":len(rows),"altered_demands":altered,"risk_demands":risk,"medium_risk_demands":sum(item["level"] == "medium" for item in risks),"extraordinary_inclusions":sum(x.extraordinary for x in rows),"cancelled":sum(x.execution_status=="cancelled" for x in rows),"reprogrammed":sum(x.execution_status=="reprogrammed" for x in rows),"status_distribution":status_distribution,"notice":"Indicadores demonstrativos com dados fictícios; não correspondem a execução institucional."}
