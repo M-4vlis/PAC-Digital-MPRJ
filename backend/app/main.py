@@ -1,4 +1,4 @@
-import io, json
+import io, json, uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, UTC
 from fastapi import Depends, FastAPI, HTTPException, Response
@@ -24,16 +24,23 @@ async def lifespan(_: FastAPI):
     finally: db.close()
     yield
 
-app = FastAPI(title="PAC Digital MPRJ", version="0.12.0", description="API demonstrativa com inteligência PNCP, transparência e relatórios executivos.", lifespan=lifespan)
+app = FastAPI(title="PAC Digital MPRJ", version="0.13.0", description="API demonstrativa endurecida para a candidata final do PAC Digital.", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 
 @app.middleware("http")
 async def security_headers(request, call_next):
+    content_length = request.headers.get("content-length")
+    try: requested_size = int(content_length) if content_length else 0
+    except ValueError: return Response(content="Content-Length inválido.", status_code=400, media_type="text/plain")
+    if requested_size > 1_048_576: return Response(content="Requisição excede o limite de 1 MiB.", status_code=413, media_type="text/plain")
     response = await call_next(request)
+    response.headers["X-Request-ID"] = request.headers.get("X-Request-ID", str(uuid.uuid4()))[:128]
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    if request.url.path.startswith("/api/"): response.headers["Cache-Control"] = "no-store"
     return response
 
 def get_demand(db, demand_id):
@@ -42,12 +49,12 @@ def get_demand(db, demand_id):
     return demand
 
 @app.get("/health")
-def health(): return {"status":"ok", "version":"0.12.0", "data_classification":"fictitious_demo_with_public_pncp_history"}
+def health(): return {"status":"ok", "version":"0.13.0", "data_classification":"fictitious_demo_with_public_pncp_history"}
 
 @app.get("/health/ready")
 def readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
-    return {"status": "ready", "database": "available", "version": "0.12.0"}
+    return {"status": "ready", "database": "available", "version": "0.13.0"}
 
 @app.get("/api/public/pac/snapshots")
 def public_snapshots(year: int | None = None, db: Session = Depends(get_session)):
@@ -225,7 +232,7 @@ def system_readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
     catalog = integration_catalog()
     return {
-        "version": "0.12.0", "application": "ready_for_demonstration", "database": "available",
+        "version": "0.13.0", "application": "ready_for_demonstration", "database": "available",
         "data_classification": "fictitious_demo", "external_transmission_enabled": False,
         "integrations": {item["id"]: item["status"] for item in catalog},
         "institutional_dependencies": ["provedor de identidade", "autorização e WSDL do SEI-MPRJ", "homologação e credenciais do PNCP"],

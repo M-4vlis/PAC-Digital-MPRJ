@@ -19,6 +19,9 @@ jobs:
         working-directory: backend
       - run: pytest -q
         working-directory: backend
+      - name: Reject committed secrets
+        run: python scripts/secret_scan.py
+        working-directory: backend
       - run: alembic upgrade head
         working-directory: backend
         env:

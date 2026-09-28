@@ -1,10 +1,10 @@
-# Status — v0.12.0
+# Status — v0.13.0
 
 **Situação:** candidata à demonstração executiva, implantada de forma controlada em VPS Oracle. O domínio do PAC está funcional; integrações externas e identidade institucional dependem de autorização e dados do MPRJ.
 
 ## Validado
 
-- Backend: 9 testes de integração aprovados.
+- Backend: 12 testes de integração, ponta a ponta, segurança e desempenho aprovados.
 - Migrations: cadeia `0001 → 0005` aplicável em banco limpo.
 - Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 170 kB.
 - Interface em execução: visão executiva, carteira, detalhe da demanda, integrações e governança inspecionados no navegador.
@@ -49,6 +49,14 @@
 - Planilha XLSX executiva com resumo, identidade de cores e carteira filtrável.
 - Geração local, sem dependência de SaaS, com validação automatizada dos arquivos.
 - Downloads PDF e XLSX validados em produção com resposta HTTP 200 e formatos reconhecidos.
+
+## Entregue na v0.13
+
+- Cenário E2E do ciclo completo da demanda e suas integrações preparatórias.
+- Orçamento de regressão de desempenho para o dashboard.
+- Limite de requisição, CSP, `no-store`, correlação de respostas e cache seguro de ativos.
+- Verificação de padrões de segredos no pipeline de integração contínua.
+- Backup PostgreSQL com checksum e restauração isolada e destrutível somente da base temporária de validação.
 
 ## Dependências para uso institucional real
 

@@ -2,9 +2,9 @@
 
 Plataforma open source e portátil para governança do Plano Anual de Contratações do MPRJ. Centraliza planejamento, revisões, execução, riscos, adequações pós-LOA, auditoria e preparação de integrações com SEI! e PCA/PNCP.
 
-> A carteira utiliza dados fictícios. A inteligência histórica utiliza somente dados abertos do PNCP filtrados pelo CNPJ do MPRJ; a v0.12 não transmite informações ao SEI ou ao PNCP.
+> A carteira utiliza dados fictícios. A inteligência histórica utiliza somente dados abertos do PNCP filtrados pelo CNPJ do MPRJ; a v0.13 não transmite informações ao SEI ou ao PNCP.
 
-## Capacidades da v0.12
+## Capacidades da v0.13
 
 - painel executivo planejado × executado, riscos e movimentações críticas;
 - carteira de demandas com fluxo de execução, histórico e versionamento;
@@ -20,6 +20,7 @@ Plataforma open source e portátil para governança do Plano Anual de Contrataç
 - snapshots públicos versionados com hash SHA-256, minimização de dados e interface de transparência.
 - melhorias iniciais de acessibilidade para teclado, foco, avisos e movimento reduzido.
 - relatórios executivos portáteis em PDF e XLSX, sem SaaS obrigatório.
+- cenário ponta a ponta, orçamento de desempenho, hardening HTTP e restauração validável do PostgreSQL.
 
 ## Execução local
 
@@ -57,6 +58,7 @@ Consulte [deploy/README.md](deploy/README.md). A composição de produção usa 
 - [Vertical v0.10](docs/25-vertical-v0.10.md)
 - [Vertical v0.11](docs/26-vertical-v0.11.md)
 - [Vertical v0.12](docs/27-vertical-v0.12.md)
+- [Qualidade v0.13](docs/28-quality-v0.13.md)
 - [Roadmap fechado até a v1.0](docs/24-roadmap-v1.md)
 - [Integração SEI](docs/20-integracao-sei.md)
 - [Backlog](docs/BACKLOG.md)

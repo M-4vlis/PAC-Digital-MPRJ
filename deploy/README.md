@@ -23,4 +23,13 @@ docker compose \
 
 O proxy poderá encaminhar as requisições para `pac-digital-web:8080`. Banco e API continuam isolados na rede interna da aplicação.
 
-As variáveis SEI e PNCP apenas indicam prontidão de configuração. A v0.10 não transmite dados externos, mesmo quando valores forem informados. A leitura de dados abertos do PNCP é independente dessas credenciais.
+As variáveis SEI e PNCP apenas indicam prontidão de configuração. A v0.13 não transmite dados externos, mesmo quando valores forem informados. A leitura de dados abertos do PNCP é independente dessas credenciais.
+
+## Backup e restauração
+
+```bash
+sh deploy/backup-postgres.sh
+sh deploy/validate-restore.sh backups/pac-digital-AAAAMMDDTHHMMSSZ.dump
+```
+
+O backup recebe permissão `0600` e checksum SHA-256. A validação restaura somente em uma base temporária de nome fixo e nunca sobrescreve `pac_digital`.

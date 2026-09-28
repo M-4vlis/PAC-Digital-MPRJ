@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.13.0 — Qualidade final
+
+- Cenário ponta a ponta cobre criação, revisão, aprovação, execução, SEI e validação PNCP.
+- Orçamento automatizado de desempenho para o dashboard executivo.
+- Limite de corpo de requisição, identificador de correlação, cache seguro e cabeçalhos CSP.
+- Verificação de segredos versionados incorporada ao CI.
+- Scripts de backup PostgreSQL com checksum e restauração isolada para validação.
+- Cabeçalhos de segurança e cache de ativos reforçados no frontend.
+
 ## v0.12.0 — Relatórios executivos
 
 - Relatório executivo em PDF, gerado localmente e sem serviço externo.

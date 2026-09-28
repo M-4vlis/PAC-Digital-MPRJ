@@ -2,7 +2,15 @@
 
 ## Estado da versão
 
-A v0.10 é uma candidata de demonstração: a carteira contém dados fictícios e a inteligência histórica contém apenas dados abertos do PNCP. Não deve receber dados internos reais nem ser exposta publicamente sem autenticação, HTTPS, backup e monitoração.
+A v0.13 é uma candidata de demonstração: a carteira contém dados fictícios e a inteligência histórica contém apenas dados abertos do PNCP. O ambiente atual usa HTTPS e autenticação de demonstração; dados internos reais exigem identidade institucional, monitoração, política de backup e homologação.
+
+## Controles técnicos
+
+- corpo de requisição limitado a 1 MiB;
+- CSP, proteção contra enquadramento, restrição de permissões e `no-store` nas APIs;
+- identificador de correlação em cada resposta;
+- busca de padrões de segredos no CI;
+- transmissões SEI/PNCP bloqueadas por desenho.
 
 ## Segredos
 

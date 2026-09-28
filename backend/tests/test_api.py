@@ -1,4 +1,4 @@
-import os, tempfile
+import os, tempfile, time
 import httpx
 from fastapi.testclient import TestClient
 
@@ -13,8 +13,11 @@ def setup_module():
 
 def test_health():
     response = TestClient(app).get("/health")
-    assert response.status_code == 200 and response.json()["version"] == "0.12.0"
+    assert response.status_code == 200 and response.json()["version"] == "0.13.0"
     assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert "default-src 'none'" in response.headers["content-security-policy"]
+    assert response.headers["x-request-id"]
     assert TestClient(app).get("/health/ready").json()["status"] == "ready"
 
 def test_dashboard_and_exports():
@@ -122,3 +125,36 @@ def test_pncp_public_history_is_restricted_and_explainable():
     created = client.post("/api/demands", json={"title":"Serviço para risco histórico","unit":"Unidade Demonstrativa","category":"services","desired_date":"2027-09-01","original_value":100000}).json()
     demand = client.get(f"/api/demands/{created['id']}").json()
     assert demand["risk"]["historical_reference"]["sample_size"] >= 12
+
+def test_end_to_end_demand_governance_execution_flow():
+    client = TestClient(app)
+    created = client.post("/api/demands", json={"title":"Serviço completo de demonstração E2E","unit":"Unidade E2E","category":"services","desired_date":"2027-12-01","original_value":320000,"pncp_item_code":"E2E-001"}).json()
+    review = client.post(f"/api/demands/{created['id']}/reviews", json={"proposed_title":"Serviço revisado pela governança E2E","proposed_value":330000,"justification":"Revisão completa para validação ponta a ponta."}).json()
+    applied = client.post(f"/api/reviews/{review['id']}/approve")
+    assert applied.status_code == 200 and applied.json()["history_preserved"] is True
+    flow = next(item for item in client.get("/api/approval-flows").json() if len(item["steps"]) == 2)
+    approval = client.post(f"/api/demands/{created['id']}/approvals", json={"flow_id":flow["id"]}).json()
+    for role in ("requesting_unit", "governance"):
+        decided = client.post(f"/api/approvals/{approval['id']}/decisions", json={"decision":"approve","actor_role":role})
+        assert decided.status_code == 200
+    assert decided.json()["status"] == "approved"
+    assert client.post(f"/api/demands/{created['id']}/execution-transition", json={"target":"preparatory"}).status_code == 200
+    assert client.post(f"/api/demands/{created['id']}/sei-link", json={"process_number":"20.22.0001.0000999.2027-10"}).status_code == 200
+    assert client.get(f"/api/demands/{created['id']}/pncp-payload").json()["valid"] is True
+    assert len(client.get(f"/api/demands/{created['id']}/versions").json()) >= 3
+
+def test_security_limits_and_api_cache_policy():
+    client = TestClient(app)
+    oversized = client.post("/api/demands", content=b"{}", headers={"content-type":"application/json", "content-length":"1048577"})
+    assert oversized.status_code == 413
+    response = client.get("/api/demands")
+    assert response.headers["cache-control"] == "no-store"
+    assert client.get("/api/reports/executive.exe").status_code == 404
+
+def test_read_endpoint_performance_budget():
+    client = TestClient(app); samples = []
+    for _ in range(25):
+        started = time.perf_counter(); response = client.get("/api/governance/dashboard"); samples.append((time.perf_counter() - started) * 1000)
+        assert response.status_code == 200
+    samples.sort(); p95 = samples[int(len(samples) * .95) - 1]
+    assert p95 < 750, f"p95 local acima do orçamento: {p95:.1f} ms"
