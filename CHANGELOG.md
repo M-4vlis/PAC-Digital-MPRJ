@@ -9,6 +9,7 @@
 - Removida a exposição de SHA-256 da tela pública; evidência técnica permanece preservada.
 - Payload PCA ajustado ao Manual PNCP v2.6 e integrações documentadas segundo sua implementação real.
 - Migration `0006`, volume persistente de anexos e novos testes de integração.
+- Corrigidos healthcheck do frontend e limite do proxy para anexos de até 8 MiB.
 
 ## v1.0.0-rc.1 — Candidata institucional
 
