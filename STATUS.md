@@ -1,6 +1,6 @@
-# Status — v0.13.0
+# Status — v1.0.0-rc.1
 
-**Situação:** candidata à demonstração executiva, implantada de forma controlada em VPS Oracle. O domínio do PAC está funcional; integrações externas e identidade institucional dependem de autorização e dados do MPRJ.
+**Situação:** candidata pronta para apresentação executiva e início da homologação institucional, implantada de forma controlada em VPS Oracle. O escopo funcional da v1 está congelado; integrações externas e identidade dependem de autorização e dados do MPRJ.
 
 ## Validado
 
@@ -58,6 +58,14 @@
 - Verificação de padrões de segredos no pipeline de integração contínua.
 - Backup PostgreSQL com checksum e restauração isolada e destrutível somente da base temporária de validação.
 - Recuperação comprovada na VPS a partir de dump de 169 KiB: checksum íntegro, seis demandas restauradas, migration presente e base temporária removida.
+
+## Entregue na v1.0 RC1
+
+- Escopo funcional congelado e alterações limitadas a correções e exigências de homologação.
+- Visão executiva de uma página, roteiro de 10 minutos e respostas para perguntas esperadas.
+- Plano de homologação com frentes, entradas e evidências de aceite.
+- Runbook de implantação, saúde, backup, recuperação e incidente.
+- Checklist que separa produto concluído de dependências institucionais.
 
 ## Dependências para uso institucional real
 

@@ -24,7 +24,7 @@ async def lifespan(_: FastAPI):
     finally: db.close()
     yield
 
-app = FastAPI(title="PAC Digital MPRJ", version="0.13.0", description="API demonstrativa endurecida para a candidata final do PAC Digital.", lifespan=lifespan)
+app = FastAPI(title="PAC Digital MPRJ", version="1.0.0-rc.1", description="Candidata v1 do PAC Digital MPRJ para demonstração e homologação institucional.", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 
 @app.middleware("http")
@@ -49,12 +49,12 @@ def get_demand(db, demand_id):
     return demand
 
 @app.get("/health")
-def health(): return {"status":"ok", "version":"0.13.0", "data_classification":"fictitious_demo_with_public_pncp_history"}
+def health(): return {"status":"ok", "version":"1.0.0-rc.1", "data_classification":"fictitious_demo_with_public_pncp_history"}
 
 @app.get("/health/ready")
 def readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
-    return {"status": "ready", "database": "available", "version": "0.13.0"}
+    return {"status": "ready", "database": "available", "version": "1.0.0-rc.1"}
 
 @app.get("/api/public/pac/snapshots")
 def public_snapshots(year: int | None = None, db: Session = Depends(get_session)):
@@ -232,7 +232,7 @@ def system_readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
     catalog = integration_catalog()
     return {
-        "version": "0.13.0", "application": "ready_for_demonstration", "database": "available",
+        "version": "1.0.0-rc.1", "application": "ready_for_institutional_validation", "database": "available",
         "data_classification": "fictitious_demo", "external_transmission_enabled": False,
         "integrations": {item["id"]: item["status"] for item in catalog},
         "institutional_dependencies": ["provedor de identidade", "autorização e WSDL do SEI-MPRJ", "homologação e credenciais do PNCP"],

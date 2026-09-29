@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.0-rc.1 — Candidata institucional
+
+- Escopo funcional da v1 congelado por ADR.
+- Visão executiva, plano de homologação, runbook e checklist de liberação consolidados.
+- Roteiro de apresentação atualizado para inteligência PNCP e transparência.
+- Estado de prontidão alterado de demonstração para validação institucional.
+- Backlog separado entre dependências institucionais e evoluções posteriores à v1.
+
 ## v0.13.0 — Qualidade final
 
 - Cenário ponta a ponta cobre criação, revisão, aprovação, execução, SEI e validação PNCP.

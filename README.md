@@ -2,9 +2,9 @@
 
 Plataforma open source e portátil para governança do Plano Anual de Contratações do MPRJ. Centraliza planejamento, revisões, execução, riscos, adequações pós-LOA, auditoria e preparação de integrações com SEI! e PCA/PNCP.
 
-> A carteira utiliza dados fictícios. A inteligência histórica utiliza somente dados abertos do PNCP filtrados pelo CNPJ do MPRJ; a v0.13 não transmite informações ao SEI ou ao PNCP.
+> A carteira utiliza dados fictícios. A inteligência histórica utiliza somente dados abertos do PNCP filtrados pelo CNPJ do MPRJ; a v1.0 RC1 não transmite informações ao SEI ou ao PNCP.
 
-## Capacidades da v0.13
+## Capacidades da v1.0 RC1
 
 - painel executivo planejado × executado, riscos e movimentações críticas;
 - carteira de demandas com fluxo de execução, histórico e versionamento;
@@ -59,6 +59,10 @@ Consulte [deploy/README.md](deploy/README.md). A composição de produção usa 
 - [Vertical v0.11](docs/26-vertical-v0.11.md)
 - [Vertical v0.12](docs/27-vertical-v0.12.md)
 - [Qualidade v0.13](docs/28-quality-v0.13.md)
+- [Visão executiva v1 RC](docs/29-visao-executiva-v1-rc.md)
+- [Plano de homologação](docs/30-plano-homologacao-institucional.md)
+- [Runbook operacional](docs/31-runbook-operacional.md)
+- [Checklist de liberação](RELEASE-CHECKLIST.md)
 - [Roadmap fechado até a v1.0](docs/24-roadmap-v1.md)
 - [Integração SEI](docs/20-integracao-sei.md)
 - [Backlog](docs/BACKLOG.md)

@@ -13,7 +13,7 @@ def setup_module():
 
 def test_health():
     response = TestClient(app).get("/health")
-    assert response.status_code == 200 and response.json()["version"] == "0.13.0"
+    assert response.status_code == 200 and response.json()["version"] == "1.0.0-rc.1"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["x-frame-options"] == "DENY"
     assert "default-src 'none'" in response.headers["content-security-policy"]
@@ -76,7 +76,7 @@ def test_executive_readiness_integrations_and_audit():
     client = TestClient(app)
     readiness = client.get("/api/system/readiness")
     assert readiness.status_code == 200
-    assert readiness.json()["application"] == "ready_for_demonstration"
+    assert readiness.json()["application"] == "ready_for_institutional_validation"
     assert readiness.json()["external_transmission_enabled"] is False
     integrations = client.get("/api/integrations").json()
     assert {item["id"] for item in integrations} == {"sei", "pncp", "identity"}

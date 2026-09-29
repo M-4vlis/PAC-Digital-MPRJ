@@ -8,7 +8,7 @@
 | v0.11 — Transparência | 03/10 a 05/10 | Snapshot público e revisão de acessibilidade |
 | v0.12 — Relatórios | 06/10 a 07/10 | PDF e ODS/XLSX executivos |
 | v0.13 — Qualidade final | 08/10 a 10/10 | E2E, segurança, desempenho e restauração |
-| v1.0 RC | 11/10 a 12/10 | Documentação, roteiro e congelamento de escopo |
+| v1.0 RC | antecipada em 29/09 | Documentação, roteiro e congelamento de escopo |
 | v1.0 Executiva | 13/10/2026 | Versão final para apresentação |
 
 ## Escopo obrigatório
