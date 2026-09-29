@@ -11,8 +11,8 @@
 - Identidade visual: frontend harmonizado com o padrão observado no ecossistema VISÃO MPRJ, usando cabeçalho vinho, detalhe dourado, fundo marfim, navegação horizontal e cartões institucionais responsivos.
 - Banco para implantação: PostgreSQL 16 em composição Docker; SQLite continua disponível para desenvolvimento e demonstração local.
 - Segurança básica: cabeçalhos HTTP, healthcheck de prontidão, segredos fora do repositório e transmissões externas bloqueadas.
-- Implantação Oracle ARM64: atualização para v1.0.0-rc.2 em preparação nesta revisão; a versão anterior permanece disponível até a troca validada.
-- Inteligência PNCP observada em produção antes da atualização: 964 contratos públicos do MPRJ importados (2022–2026), total inicial agregado de R$ 1,432 bilhão e apenas seis registros temporalmente calculáveis. A amostra é insuficiente, fica marcada como exploratória e não calibra o risco.
+- Implantação Oracle ARM64: v1.0.0-rc.2 ativa em HTTPS, migration `0006` aplicada, API e frontend saudáveis e backup prévio executado.
+- Inteligência PNCP em 29/09/2026: 966 contratos públicos do MPRJ importados (2022–2026), nove registros temporalmente calculáveis e cobertura de 0,93%. A última sincronização enriqueceu sete registros e terminou parcial após resposta HTTP 429 do PNCP. A amostra continua insuficiente, fica marcada como exploratória e não calibra o risco.
 - Integração de borda: frontend conectado ao proxy compartilhado por alias exclusivo; banco e API permanecem na rede interna.
 
 ## Entregue na v0.10

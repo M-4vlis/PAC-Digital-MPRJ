@@ -22,6 +22,8 @@ Os valores são ordenados e calculados pelo método empírico de posto mais pró
 
 Com amostras pequenas, os percentis são instáveis. Por isso a tela os marca como exploratórios e o motor só aceita referência histórica por categoria com `n ≥ 30`.
 
+Posição observada após a implantação da RC2 em 29/09/2026: 966 contratos, nove prazos calculáveis e cobertura de 0,93%. A API do PNCP respondeu HTTP 429 durante o enriquecimento; a execução foi registrada como parcial e nenhuma inferência foi usada para preencher datas ausentes.
+
 ## Uso no motor de risco
 
 Sem 30 casos válidos na mesma categoria, nenhum percentil histórico altera o risco. Permanecem apenas regras explicáveis de situação, data desejada, retroplanejamento não normativo, catálogo e vínculo SEI.
