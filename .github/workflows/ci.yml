@@ -19,6 +19,8 @@ jobs:
         working-directory: backend
       - run: pytest -q
         working-directory: backend
+        env:
+          PYTHONPATH: .
       - name: Reject committed secrets
         run: python scripts/secret_scan.py
         working-directory: backend
