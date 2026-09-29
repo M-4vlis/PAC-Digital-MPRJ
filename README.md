@@ -62,6 +62,7 @@ Consulte [deploy/README.md](deploy/README.md). A composição de produção usa 
 - [Visão executiva v1 RC](docs/29-visao-executiva-v1-rc.md)
 - [Plano de homologação](docs/30-plano-homologacao-institucional.md)
 - [Runbook operacional](docs/31-runbook-operacional.md)
+- [Notas da v1.0 RC1](docs/32-release-notes-v1-rc1.md)
 - [Checklist de liberação](RELEASE-CHECKLIST.md)
 - [Roadmap fechado até a v1.0](docs/24-roadmap-v1.md)
 - [Integração SEI](docs/20-integracao-sei.md)
