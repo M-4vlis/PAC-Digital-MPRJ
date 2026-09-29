@@ -11,10 +11,10 @@ O PAC deixa de ser uma fotografia dispersa e passa a ser uma carteira gerencial:
 ## Evidências da RC
 
 - ciclo completo demonstrável com dados fictícios;
-- 964 contratos públicos do MPRJ importados do PNCP, sem fornecedores armazenados;
+- 964 contratos públicos do MPRJ importados do PNCP, sem fornecedores armazenados; a amostra temporal é separada e não calibra risco enquanto insuficiente;
 - painel planejado × executado, riscos e movimentações críticas;
 - snapshots públicos verificáveis e relatórios PDF/XLSX;
-- 12 testes automatizados, CI verde e restauração comprovada;
+- 13 testes automatizados, build, migrations e restauração comprovada;
 - arquitetura open source, conteinerizada, portátil e sem SaaS obrigatório.
 
 ## O que se pede ao MPRJ

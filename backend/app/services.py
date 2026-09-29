@@ -6,11 +6,28 @@ from .models import Demand, DemandVersion, AuditEvent
 NON_NORMATIVE_DEFAULTS = {"goods": {"contract": 120, "preparatory": 60}, "services": {"contract": 150, "preparatory": 60}, "works": {"contract": 210, "preparatory": 90}, "it": {"contract": 180, "preparatory": 75}}
 
 def demand_payload(demand: Demand):
-    return {key: (value.isoformat() if hasattr(value, "isoformat") else float(value) if isinstance(value, (int, float)) is False and value is not None and key.endswith("value") else value) for key, value in {"id": demand.id, "code": demand.code, "title": demand.title, "unit": demand.unit, "category": demand.category, "status": demand.status, "execution_status": demand.execution_status, "desired_date": demand.desired_date, "original_value": demand.original_value, "revised_value": demand.revised_value, "adjusted_value": demand.adjusted_value, "executed_value": demand.executed_value, "loa_justification": demand.loa_justification, "change_justification": demand.change_justification, "pncp_item_code": demand.pncp_item_code, "sei_process_number": demand.sei_process_number, "sei_protocol_id": demand.sei_protocol_id, "sei_status": demand.sei_status, "extraordinary": demand.extraordinary, "version": demand.version}.items()}
+    decimal_fields = {"quantity", "unit_value", "original_value", "revised_value", "adjusted_value", "executed_value"}
+    values = {
+        "id": demand.id, "code": demand.code, "title": demand.title, "unit": demand.unit,
+        "justification": demand.justification, "quantity": demand.quantity, "unit_measure": demand.unit_measure,
+        "unit_value": demand.unit_value, "priority": demand.priority, "dependency_description": demand.dependency_description,
+        "requester_name": demand.requester_name, "requester_email": demand.requester_email,
+        "desired_start_date": demand.desired_start_date, "desired_date": demand.desired_date,
+        "renewal_contract": demand.renewal_contract, "category": demand.category, "status": demand.status,
+        "execution_status": demand.execution_status, "original_value": demand.original_value,
+        "revised_value": demand.revised_value, "adjusted_value": demand.adjusted_value,
+        "executed_value": demand.executed_value, "loa_justification": demand.loa_justification,
+        "change_justification": demand.change_justification, "pncp_item_code": demand.pncp_item_code,
+        "pncp_catalog_code": demand.pncp_catalog_code, "pncp_classification": demand.pncp_classification,
+        "pncp_superior_code": demand.pncp_superior_code, "pncp_superior_name": demand.pncp_superior_name,
+        "sei_process_number": demand.sei_process_number, "sei_protocol_id": demand.sei_protocol_id,
+        "sei_status": demand.sei_status, "extraordinary": demand.extraordinary, "version": demand.version,
+    }
+    return {key: (value.isoformat() if hasattr(value, "isoformat") else float(value) if key in decimal_fields and value is not None else value) for key, value in values.items()}
 
-def snapshot(db: Session, demand: Demand, reason: str, detail: str):
+def snapshot(db: Session, demand: Demand, reason: str, detail: str, actor_role: str = "governance_demo"):
     db.add(DemandVersion(demand_id=demand.id, version=demand.version, reason=reason, payload=json.dumps(demand_payload(demand), ensure_ascii=False)))
-    db.add(AuditEvent(demand_id=demand.id, action=reason, detail=detail))
+    db.add(AuditEvent(demand_id=demand.id, action=reason, actor_role=actor_role, detail=detail))
 
 def backplan(desired_date: date, category: str, parameters: dict | None = None):
     values = dict(NON_NORMATIVE_DEFAULTS.get(category, NON_NORMATIVE_DEFAULTS["services"]))
@@ -22,11 +39,35 @@ def backplan(desired_date: date, category: str, parameters: dict | None = None):
 
 def pncp_payload(demand: Demand):
     amount = demand.adjusted_value or demand.revised_value or demand.original_value
-    item = {"numeroItem": demand.code, "descricao": demand.title, "categoriaItemPca": demand.category, "quantidadeEstimada": 1, "valorTotalEstimado": float(amount), "valorOrcamentoExercicio": float(amount), "dataDesejada": demand.desired_date.isoformat(), "unidadeRequisitante": demand.unit, "codigoItemCatalogo": demand.pncp_item_code}
+    category_codes = {"goods": 1, "services": 2, "works": 3, "it": 2}
+    classification = demand.pncp_classification or (1 if demand.category == "goods" else 2)
+    unit_code = os.getenv("PNCP_UNIT_CODE")
+    item = {
+        "numeroItem": demand.id,
+        "categoriaItemPca": category_codes.get(demand.category),
+        "catalogo": demand.pncp_catalog_code,
+        "classificacaoCatalogo": classification,
+        "classificacaoSuperiorCodigo": demand.pncp_superior_code,
+        "classificacaoSuperiorNome": demand.pncp_superior_name,
+        "codigoItem": demand.pncp_item_code,
+        "descricao": demand.title,
+        "unidadeFornecimento": demand.unit_measure,
+        "quantidade": float(demand.quantity or 1),
+        "valorUnitario": float(demand.unit_value or amount),
+        "valorTotal": float(amount),
+        "valorOrcamentoExercicio": float(amount),
+        "renovacaoContrato": bool(demand.renewal_contract),
+        "dataDesejada": demand.desired_date.isoformat(),
+        "unidadeRequisitante": demand.unit,
+        "grupoContratacaoCodigo": "",
+        "grupoContratacaoNome": demand.dependency_description or "",
+    }
     errors = []
-    if not demand.pncp_item_code: errors.append("codigoItemCatalogo ausente: completar mapeamento com catálogo PNCP antes de qualquer envio.")
+    if not unit_code: errors.append("Código PNCP da unidade administrativa não configurado.")
+    if not demand.pncp_catalog_code: errors.append("Catálogo PNCP não definido.")
+    if not demand.pncp_superior_code or not demand.pncp_superior_name: errors.append("Classe do material ou grupo do serviço não mapeado.")
     if demand.extraordinary and not demand.change_justification: errors.append("inclusão extraordinária exige justificativa.")
-    return {"valid": not errors, "publishable": False, "notice": "Payload de pré-validação. Não envia dados ao PNCP e não usa credenciais.", "payload": {"anoPca": demand.desired_date.year, "itens": [item]}, "errors": errors}
+    return {"valid": not errors, "publishable": False, "notice": "Estrutura local de pré-validação baseada no Manual de Integração do PNCP v2.6. Não envia dados nem usa credenciais.", "payload": {"codigoUnidade": unit_code, "anoPca": demand.desired_date.year, "itensPlano": [item]}, "errors": errors}
 
 def risk_assessment(demand: Demand, reference_date: date | None = None, historical: dict | None = None):
     reference = reference_date or date.today()

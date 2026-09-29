@@ -29,6 +29,10 @@ services:
       SEI_SERVICE_KEY: ${SEI_SERVICE_KEY:-}
       PNCP_API_BASE_URL: ${PNCP_API_BASE_URL:-}
       PNCP_API_TOKEN: ${PNCP_API_TOKEN:-}
+      PNCP_UNIT_CODE: ${PNCP_UNIT_CODE:-}
+      UPLOAD_DIR: /app/data/uploads
+    volumes:
+      - pac_uploads:/app/data/uploads
     depends_on:
       database:
         condition: service_healthy
@@ -55,3 +59,4 @@ services:
 
 volumes:
   pac_postgres:
+  pac_uploads:

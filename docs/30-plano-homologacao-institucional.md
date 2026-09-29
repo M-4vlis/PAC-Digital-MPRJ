@@ -8,6 +8,7 @@
 | PCA/PNCP | Gestão de contratações | catálogo, payload, ambiente e credencial | validação e envio controlado |
 | Transparência | Comunicação/Transparência | campos, periodicidade e canal | snapshot publicado e conferido |
 | Infraestrutura | TI | domínio, banco, logs, backup e monitoração | teste operacional e restauração |
+| Documentos DFD | Gestão documental/TI/Segurança | classificação, storage, antivírus, retenção e acesso | upload, recuperação, bloqueios e restauração homologados |
 | Acessibilidade/LGPD | Áreas competentes | critérios institucionais | parecer e correções concluídas |
 
 ## Sequência recomendada

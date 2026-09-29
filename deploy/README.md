@@ -23,7 +23,9 @@ docker compose \
 
 O proxy poderá encaminhar as requisições para `pac-digital-web:8080`. Banco e API continuam isolados na rede interna da aplicação.
 
-As variáveis SEI e PNCP apenas indicam prontidão de configuração. A v0.13 não transmite dados externos, mesmo quando valores forem informados. A leitura de dados abertos do PNCP é independente dessas credenciais.
+As variáveis SEI e PNCP apenas indicam prontidão de configuração. A v1.0 RC2 não transmite dados externos, mesmo quando valores forem informados. A leitura de dados abertos do PNCP é independente dessas credenciais. `PNCP_UNIT_CODE` identifica a unidade no payload local de pré-validação; não habilita publicação.
+
+O volume `pac_uploads` preserva os anexos de DFD entre recriações dos contêineres. A cópia de segurança institucional deve abranger o PostgreSQL e esse volume.
 
 ## Backup e restauração
 

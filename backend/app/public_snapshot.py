@@ -16,7 +16,7 @@ PUBLIC_FIELDS = (
 
 
 def _canonical_payload(db: Session, year: int):
-    rows = db.query(Demand).filter(Demand.desired_date >= date(year, 1, 1), Demand.desired_date <= date(year, 12, 31)).order_by(Demand.code).all()
+    rows = db.query(Demand).filter(Demand.deleted_at.is_(None), Demand.desired_date >= date(year, 1, 1), Demand.desired_date <= date(year, 12, 31)).order_by(Demand.code).all()
     demands = [{key: demand_payload(row)[key] for key in PUBLIC_FIELDS} for row in rows]
     planned = sum(float(row.adjusted_value or row.revised_value or row.original_value) for row in rows)
     executed = sum(float(row.executed_value or 0) for row in rows)

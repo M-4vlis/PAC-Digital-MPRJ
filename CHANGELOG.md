@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.0-rc.2 — Correções de prontidão institucional
+
+- Corrigida atualização imediata da carteira após criação de demanda.
+- Cadastro transformado em DFD completo, com cálculo monetário em reais e validação normativa.
+- Incluídas edição versionada, retirada lógica justificada e anexos de DFD.
+- Inteligência PNCP passou a diferenciar população e amostra temporal e a bloquear calibração insuficiente.
+- Removida a exposição de SHA-256 da tela pública; evidência técnica permanece preservada.
+- Payload PCA ajustado ao Manual PNCP v2.6 e integrações documentadas segundo sua implementação real.
+- Migration `0006`, volume persistente de anexos e novos testes de integração.
+
 ## v1.0.0-rc.1 — Candidata institucional
 
 - Escopo funcional da v1 congelado por ADR.

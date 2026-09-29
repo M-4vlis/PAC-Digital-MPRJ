@@ -1,8 +1,9 @@
-# Checklist de liberação — v1.0 RC1
+# Checklist de liberação — v1.0 RC2
 
 ## Produto
 
 - [x] planejamento, revisão, aprovação, execução e histórico integrados;
+- [x] DFD completo, correção versionada, retirada justificada e anexo documental;
 - [x] adequação pós-LOA e retroplanejamento explicável;
 - [x] painel executivo, transparência e relatórios PDF/XLSX;
 - [x] inteligência PNCP pública separada da carteira fictícia;
@@ -23,6 +24,7 @@
 - [ ] OIDC/LDAP e autorização por unidade conectados;
 - [ ] credenciais e contratos SEI/PNCP homologados;
 - [ ] domínio, monitoração, retenção e rotina de backup aprovados;
+- [ ] storage, antivírus, retenção e acesso a anexos homologados;
 - [ ] acessibilidade e conteúdo validados pelas áreas competentes.
 
-Nenhum item pendente exige reconstrução do produto; todos correspondem a decisões, credenciais ou validações institucionais.
+Os itens pendentes não exigem reconstrução do domínio do PAC, mas identidade, autorização confiável, cliente SEI, transmissão PNCP, filas e controles institucionais de documentos ainda exigem implementação e testes durante a homologação.

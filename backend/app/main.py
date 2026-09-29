@@ -1,15 +1,16 @@
-import io, json, uuid
+import hashlib, io, json, os, uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, UTC
-from fastapi import Depends, FastAPI, HTTPException, Response
+from pathlib import Path
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from openpyxl import Workbook
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from .database import Base, engine, get_session
-from .models import ApprovalDecision, ApprovalFlow, ApprovalStep, AuditEvent, Demand, DemandApproval, DemandVersion, PublicPacSnapshot, Review
-from .schemas import ApprovalDecisionCreate, ApprovalStart, BackplanRequest, DemandCreate, LoaAdjustment, ReviewCreate, SeiLinkRequest, TransitionRequest
+from .models import ApprovalDecision, ApprovalFlow, ApprovalStep, AuditEvent, Demand, DemandApproval, DemandAttachment, DemandVersion, PublicPacSnapshot, Review
+from .schemas import ApprovalDecisionCreate, ApprovalStart, BackplanRequest, DemandCreate, DemandDelete, DemandUpdate, LoaAdjustment, ReviewCreate, SeiLinkRequest, TransitionRequest
 from .seed import seed
 from .services import EXECUTION_TRANSITIONS, backplan, csv_export, demand_payload, integration_catalog, pncp_payload, risk_assessment, sei_integration_plan, snapshot
 from .pncp_history import category_benchmarks, historical_metrics
@@ -24,15 +25,20 @@ async def lifespan(_: FastAPI):
     finally: db.close()
     yield
 
-app = FastAPI(title="PAC Digital MPRJ", version="1.0.0-rc.1", description="Candidata v1 do PAC Digital MPRJ para demonstração e homologação institucional.", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+app = FastAPI(title="PAC Digital MPRJ", version="1.0.0-rc.2", description="Candidata v1 do PAC Digital MPRJ para demonstração e homologação institucional.", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST", "PATCH", "DELETE"], allow_headers=["Content-Type", "X-Actor-Role"])
+
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", Path(__file__).resolve().parents[1] / "data" / "uploads"))
+ALLOWED_DFD_TYPES = {"application/pdf": ".pdf", "application/msword": ".doc", "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx"}
+ALLOWED_DEMAND_ROLES = {"requesting_unit", "governance"}
 
 @app.middleware("http")
 async def security_headers(request, call_next):
     content_length = request.headers.get("content-length")
     try: requested_size = int(content_length) if content_length else 0
     except ValueError: return Response(content="Content-Length inválido.", status_code=400, media_type="text/plain")
-    if requested_size > 1_048_576: return Response(content="Requisição excede o limite de 1 MiB.", status_code=413, media_type="text/plain")
+    size_limit = 10_485_760 if request.url.path.endswith("/attachments") else 1_048_576
+    if requested_size > size_limit: return Response(content="Requisição excede o limite permitido.", status_code=413, media_type="text/plain")
     response = await call_next(request)
     response.headers["X-Request-ID"] = request.headers.get("X-Request-ID", str(uuid.uuid4()))[:128]
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -45,16 +51,20 @@ async def security_headers(request, call_next):
 
 def get_demand(db, demand_id):
     demand = db.get(Demand, demand_id)
-    if not demand: raise HTTPException(404, "Demanda não encontrada")
+    if not demand or demand.deleted_at is not None: raise HTTPException(404, "Demanda não encontrada")
     return demand
 
+def require_demand_role(x_actor_role: str = Header(default="requesting_unit")):
+    if x_actor_role not in ALLOWED_DEMAND_ROLES: raise HTTPException(403, "Perfil não autorizado")
+    return x_actor_role
+
 @app.get("/health")
-def health(): return {"status":"ok", "version":"1.0.0-rc.1", "data_classification":"fictitious_demo_with_public_pncp_history"}
+def health(): return {"status":"ok", "version":"1.0.0-rc.2", "data_classification":"fictitious_demo_with_public_pncp_history"}
 
 @app.get("/health/ready")
 def readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
-    return {"status": "ready", "database": "available", "version": "1.0.0-rc.1"}
+    return {"status": "ready", "database": "available", "version": "1.0.0-rc.2"}
 
 @app.get("/api/public/pac/snapshots")
 def public_snapshots(year: int | None = None, db: Session = Depends(get_session)):
@@ -138,16 +148,74 @@ def decide_approval(approval_id: int, body: ApprovalDecisionCreate, db: Session 
 @app.get("/api/demands")
 def demands(db: Session = Depends(get_session)):
     benchmarks = category_benchmarks(db)
-    return [{**demand_payload(d), "risk": risk_assessment(d, historical=benchmarks)} for d in db.query(Demand).order_by(Demand.code).all()]
+    rows = db.query(Demand).filter(Demand.deleted_at.is_(None)).order_by(Demand.code).all()
+    return [{**demand_payload(d), "risk": risk_assessment(d, historical=benchmarks)} for d in rows]
 
 @app.post("/api/demands", status_code=201)
-def create_demand(body: DemandCreate, db: Session = Depends(get_session)):
-    if body.extraordinary and not body.justification:
-        raise HTTPException(422, "Inclusão extraordinária exige justificativa")
+def create_demand(body: DemandCreate, db: Session = Depends(get_session), actor_role: str = Depends(require_demand_role)):
     code = f"PAC-{body.desired_date.year}-{db.query(Demand).count() + 1:03d}"
-    demand = Demand(code=code, title=body.title, unit=body.unit, category=body.category, desired_date=body.desired_date, original_value=body.original_value, pncp_item_code=body.pncp_item_code, extraordinary=body.extraordinary, change_justification=body.justification, status="draft")
-    db.add(demand); db.flush(); snapshot(db, demand, "demand_created", body.justification or "Demanda criada pela interface."); db.commit(); db.refresh(demand)
+    values = body.model_dump(exclude={"extraordinary_justification"})
+    demand = Demand(code=code, **values, change_justification=body.extraordinary_justification, status="draft")
+    db.add(demand); db.flush(); snapshot(db, demand, "demand_created", "DFD registrado pela unidade requisitante.", actor_role=actor_role); db.commit(); db.refresh(demand)
     return demand_payload(demand)
+
+@app.patch("/api/demands/{demand_id}")
+def update_demand(demand_id: int, body: DemandUpdate, db: Session = Depends(get_session), actor_role: str = Depends(require_demand_role)):
+    demand = get_demand(db, demand_id)
+    if actor_role == "requesting_unit" and (demand.status != "draft" or demand.execution_status != "not_started"):
+        raise HTTPException(409, "Após o envio para governança, alterações devem seguir o fluxo formal de revisão")
+    values = body.model_dump(exclude={"change_justification"})
+    for key, value in values.items(): setattr(demand, key, value)
+    demand.version += 1; demand.change_justification = body.change_justification
+    snapshot(db, demand, "demand_updated", body.change_justification, actor_role=actor_role)
+    db.commit(); db.refresh(demand)
+    return demand_payload(demand)
+
+@app.delete("/api/demands/{demand_id}", status_code=204)
+def delete_demand(demand_id: int, body: DemandDelete, db: Session = Depends(get_session), actor_role: str = Depends(require_demand_role)):
+    demand = get_demand(db, demand_id)
+    if actor_role == "requesting_unit" and (demand.status != "draft" or demand.execution_status != "not_started"):
+        raise HTTPException(409, "Após o envio para governança, a retirada deve seguir o fluxo formal de cancelamento")
+    snapshot(db, demand, "demand_removed", body.justification, actor_role=actor_role)
+    demand.deleted_at = datetime.now(UTC).replace(tzinfo=None); demand.deletion_reason = body.justification; demand.deleted_by_role = actor_role
+    db.commit()
+    return Response(status_code=204)
+
+@app.get("/api/demands/{demand_id}/attachments")
+def demand_attachments(demand_id: int, db: Session = Depends(get_session)):
+    get_demand(db, demand_id)
+    rows = db.query(DemandAttachment).filter_by(demand_id=demand_id, deleted_at=None).order_by(DemandAttachment.created_at.desc()).all()
+    return [{"id": x.id, "document_type": x.document_type, "name": x.original_name, "content_type": x.content_type, "size_bytes": x.size_bytes, "created_at": x.created_at.isoformat()} for x in rows]
+
+@app.post("/api/demands/{demand_id}/attachments", status_code=201)
+async def upload_demand_attachment(demand_id: int, file: UploadFile = File(...), db: Session = Depends(get_session), actor_role: str = Depends(require_demand_role)):
+    demand = get_demand(db, demand_id)
+    content_type = file.content_type or "application/octet-stream"
+    if content_type not in ALLOWED_DFD_TYPES: raise HTTPException(415, "DFD deve estar em PDF, DOC ou DOCX")
+    content = await file.read(8_388_609)
+    if not content: raise HTTPException(422, "Arquivo vazio")
+    if len(content) > 8_388_608: raise HTTPException(413, "DFD excede o limite de 8 MiB")
+    signatures = {
+        "application/pdf": lambda data: data.startswith(b"%PDF-"),
+        "application/msword": lambda data: data.startswith(bytes.fromhex("D0CF11E0A1B11AE1")),
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": lambda data: data.startswith(b"PK"),
+    }
+    if not signatures[content_type](content): raise HTTPException(422, "Conteúdo do arquivo não corresponde ao formato declarado")
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    stored_name = f"{uuid.uuid4().hex}{ALLOWED_DFD_TYPES[content_type]}"
+    (UPLOAD_DIR / stored_name).write_bytes(content)
+    row = DemandAttachment(demand_id=demand.id, original_name=(Path(file.filename or "DFD").name[:255]), stored_name=stored_name, content_type=content_type, size_bytes=len(content), sha256=hashlib.sha256(content).hexdigest(), uploaded_by_role=actor_role)
+    db.add(row); db.flush(); db.add(AuditEvent(demand_id=demand.id, action="dfd_attached", actor_role=actor_role, detail=f"DFD anexado: {row.original_name}.")); db.commit(); db.refresh(row)
+    return {"id": row.id, "name": row.original_name, "content_type": row.content_type, "size_bytes": row.size_bytes, "created_at": row.created_at.isoformat()}
+
+@app.get("/api/demands/{demand_id}/attachments/{attachment_id}")
+def download_demand_attachment(demand_id: int, attachment_id: int, db: Session = Depends(get_session)):
+    get_demand(db, demand_id)
+    row = db.query(DemandAttachment).filter_by(id=attachment_id, demand_id=demand_id, deleted_at=None).first()
+    if not row: raise HTTPException(404, "Documento não encontrado")
+    path = UPLOAD_DIR / row.stored_name
+    if not path.is_file(): raise HTTPException(410, "Documento indisponível no armazenamento")
+    return FileResponse(path, media_type=row.content_type, filename=row.original_name)
 
 @app.get("/api/demands/{demand_id}")
 def demand(demand_id: int, db: Session = Depends(get_session)):
@@ -232,7 +300,7 @@ def system_readiness(db: Session = Depends(get_session)):
     db.execute(text("SELECT 1"))
     catalog = integration_catalog()
     return {
-        "version": "1.0.0-rc.1", "application": "ready_for_institutional_validation", "database": "available",
+        "version": "1.0.0-rc.2", "application": "ready_for_institutional_validation", "database": "available",
         "data_classification": "fictitious_demo", "external_transmission_enabled": False,
         "integrations": {item["id"]: item["status"] for item in catalog},
         "institutional_dependencies": ["provedor de identidade", "autorização e WSDL do SEI-MPRJ", "homologação e credenciais do PNCP"],
@@ -247,7 +315,7 @@ def audit_events(limit: int = 50, db: Session = Depends(get_session)):
 
 @app.get("/api/governance/dashboard")
 def dashboard(db: Session = Depends(get_session)):
-    rows = db.query(Demand).all(); planned = sum(float(x.adjusted_value or x.revised_value or x.original_value) for x in rows); executed = sum(float(x.executed_value) for x in rows)
+    rows = db.query(Demand).filter(Demand.deleted_at.is_(None)).all(); planned = sum(float(x.adjusted_value or x.revised_value or x.original_value) for x in rows); executed = sum(float(x.executed_value) for x in rows)
     altered = sum(1 for x in rows if x.version > 1 or x.revised_value is not None or x.adjusted_value is not None)
     benchmarks = category_benchmarks(db)
     risks = [risk_assessment(x, historical=benchmarks) for x in rows]
@@ -257,14 +325,14 @@ def dashboard(db: Session = Depends(get_session)):
 
 @app.get("/api/reports/executive.{format}")
 def executive_report(format: str, db: Session = Depends(get_session)):
-    rows = db.query(Demand).order_by(Demand.code).all(); metrics = dashboard(db)
+    rows = db.query(Demand).filter(Demand.deleted_at.is_(None)).order_by(Demand.code).all(); metrics = dashboard(db)
     if format == "pdf": return Response(executive_pdf(metrics, rows), media_type="application/pdf", headers={"Content-Disposition":"attachment; filename=PAC-Digital-MPRJ-Relatorio-Executivo.pdf"})
     if format == "xlsx": return Response(executive_xlsx(metrics, rows), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition":"attachment; filename=PAC-Digital-MPRJ-Relatorio-Executivo.xlsx"})
     raise HTTPException(404, "Formato suportado: pdf, xlsx")
 
 @app.get("/api/exports/demands.{format}")
 def export_demands(format: str, db: Session = Depends(get_session)):
-    rows = db.query(Demand).order_by(Demand.code).all()
+    rows = db.query(Demand).filter(Demand.deleted_at.is_(None)).order_by(Demand.code).all()
     if format == "json": return [demand_payload(x) for x in rows]
     if format == "csv": return Response(csv_export(rows), media_type="text/csv; charset=utf-8", headers={"Content-Disposition":"attachment; filename=PAC-Digital-MPRJ.csv"})
     if format == "xlsx":

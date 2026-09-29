@@ -4,6 +4,7 @@ import math
 import re
 import time
 from datetime import UTC, date, datetime
+from decimal import Decimal, ROUND_HALF_UP
 
 import httpx
 from sqlalchemy.orm import Session
@@ -50,7 +51,7 @@ def _contract_values(item, url):
         "object_description": item.get("objetoContrato") or "Objeto não informado no PNCP",
         "unit_code": unit.get("codigoUnidade"),
         "unit_name": unit.get("nomeUnidade"),
-        "initial_value": item.get("valorInicial") or 0,
+        "initial_value": Decimal(str(item.get("valorInicial") or 0)),
         "signature_date": _date(item.get("dataAssinatura")),
         "contract_publication_at": _datetime(item.get("dataPublicacaoPncp")),
         "source_updated_at": _datetime(item.get("dataAtualizacao")),
@@ -63,17 +64,18 @@ def _purchase_reference(control_number: str | None):
     match = re.search(r"-1-(\d+)/(\d{4})$", control_number or "")
     return (int(match.group(2)), int(match.group(1))) if match else None
 
-def _get(client: httpx.Client, url: str, params=None, retries: int = 3):
+def _get(client: httpx.Client, url: str, params=None, retries: int = 5):
     response = None
     for attempt in range(retries):
         response = client.get(url, params=params)
         if response.status_code not in {429, 502, 503, 504}: return response
         retry_after = response.headers.get("Retry-After")
-        wait = float(retry_after) if retry_after and retry_after.isdigit() else .75 * (attempt + 1)
-        time.sleep(min(wait, 5))
+        try: wait = float(retry_after) if retry_after else float(2 ** attempt)
+        except ValueError: wait = float(2 ** attempt)
+        time.sleep(min(max(wait, 1), 15))
     return response
 
-def sync_history(db: Session, start_year: int, end_year: int, enrich_limit: int = 250, client: httpx.Client | None = None, request_delay: float = .25):
+def sync_history(db: Session, start_year: int, end_year: int, enrich_limit: int = 250, client: httpx.Client | None = None, request_delay: float = .75):
     if start_year < 2021 or end_year > datetime.now().year + 1 or start_year > end_year:
         raise ValueError("Intervalo de anos inválido")
     run = PncpSyncRun(start_year=start_year, end_year=end_year)
@@ -150,25 +152,39 @@ def historical_metrics(db: Session):
     for record in records:
         year = record.contract_publication_at.year if record.contract_publication_at else record.contract_year
         annual[year] = annual.get(year, 0) + 1
-        bucket = categories.setdefault(record.category, {"count": 0, "value": 0.0, "durations": []})
-        bucket["count"] += 1; bucket["value"] += float(record.initial_value or 0)
+        bucket = categories.setdefault(record.category, {"count": 0, "value": Decimal("0"), "durations": []})
+        bucket["count"] += 1; bucket["value"] += Decimal(record.initial_value or 0)
         if record.public_phase_days is not None: bucket["durations"].append(record.public_phase_days)
     durations = [record.public_phase_days for record in records if record.public_phase_days is not None]
     def stats(values):
         return {"sample_size": len(values), "p50_days": _percentile(values, .50), "p75_days": _percentile(values, .75), "p90_days": _percentile(values, .90)}
+    coverage_rate = round(len(durations) / len(records) * 100, 2) if records else 0
+    quality_warnings = []
+    if coverage_rate < 25: quality_warnings.append("Cobertura temporal insuficiente para conclusões gerais sobre toda a base importada.")
+    if len(durations) < 30: quality_warnings.append("Amostra temporal inferior a 30 contratos; percentis são exploratórios e não calibram o risco geral.")
     return {
         "source": "PNCP — dados abertos", "source_cnpj": MPRJ_CNPJ,
         "source_organization": "MINISTERIO PUBLICO DO ESTADO DO RIO DE JANEIRO",
         "records": len(records), "enriched_records": len(durations),
-        "initial_value_total": round(sum(float(record.initial_value or 0) for record in records), 2),
+        "temporal_coverage_rate": coverage_rate,
+        "initial_value_total": float(sum((Decimal(record.initial_value or 0) for record in records), Decimal("0")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)),
         "years": [{"year": year, "records": annual[year]} for year in sorted(annual)],
         "overall": stats(durations),
-        "categories": [{"category": key, "records": value["count"], "initial_value_total": round(value["value"], 2), **stats(value["durations"])} for key, value in sorted(categories.items())],
+        "categories": [{"category": key, "records": value["count"], "initial_value_total": float(value["value"].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)), **stats(value["durations"])} for key, value in sorted(categories.items())],
         "last_sync": sync_run_payload(runs[0]) if runs else None,
         "calibration_status": "calibrated" if len(durations) >= 30 else "insufficient_sample",
+        "statistical_use_enabled": len(durations) >= 30,
+        "quality_warnings": quality_warnings,
+        "methodology": {
+            "population": "Contratos públicos recuperados da API de consulta do PNCP para o CNPJ do MPRJ.",
+            "temporal_sample": "Somente contratos com data de publicação da contratação e data de assinatura válidas.",
+            "duration_definition": "Dias corridos entre a publicação da contratação no PNCP e a assinatura do contrato.",
+            "percentiles": "P50 é a mediana; P75 e P90 são os valores de ordem pelos quais, respectivamente, 75% e 90% das observações ficam abaixo ou iguais.",
+            "limitations": "Não mede a fase preparatória interna, não representa prazo normativo e não deve ser generalizado quando a cobertura é baixa.",
+        },
         "notice": "Referência estatística da fase pública entre publicação da contratação e assinatura. Não representa prazo normativo nem o ciclo preparatório interno do MPRJ.",
     }
 
 def category_benchmarks(db: Session):
     metrics = historical_metrics(db)
-    return {item["category"]: item for item in metrics["categories"] if item["sample_size"] >= 10}
+    return {item["category"]: item for item in metrics["categories"] if item["sample_size"] >= 30}

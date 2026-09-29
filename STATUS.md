@@ -1,18 +1,18 @@
-# Status — v1.0.0-rc.1
+# Status — v1.0.0-rc.2
 
 **Situação:** candidata pronta para apresentação executiva e início da homologação institucional, implantada de forma controlada em VPS Oracle. O escopo funcional da v1 está congelado; integrações externas e identidade dependem de autorização e dados do MPRJ.
 
 ## Validado
 
-- Backend: 12 testes de integração, ponta a ponta, segurança e desempenho aprovados.
-- Migrations: cadeia `0001 → 0005` aplicável em banco limpo.
-- Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 170 kB.
+- Backend: 13 testes de integração, ponta a ponta, segurança e desempenho aprovados.
+- Migrations: cadeia `0001 → 0006` aplicável em banco limpo.
+- Frontend: build React/TypeScript/Vite concluído, com 30 módulos e bundle aproximado de 182 kB.
 - Interface em execução: visão executiva, carteira, detalhe da demanda, integrações e governança inspecionados no navegador.
 - Identidade visual: frontend harmonizado com o padrão observado no ecossistema VISÃO MPRJ, usando cabeçalho vinho, detalhe dourado, fundo marfim, navegação horizontal e cartões institucionais responsivos.
 - Banco para implantação: PostgreSQL 16 em composição Docker; SQLite continua disponível para desenvolvimento e demonstração local.
 - Segurança básica: cabeçalhos HTTP, healthcheck de prontidão, segredos fora do repositório e transmissões externas bloqueadas.
-- Implantação Oracle ARM64: v1.0.0-rc.1 ativa em HTTPS, com migration `0005` aplicada e prontidão `ready_for_institutional_validation`.
-- Inteligência PNCP em produção: 964 contratos públicos do MPRJ importados (2022–2026), total inicial agregado de R$ 1,432 bilhão e enriquecimento temporal incremental protegido contra limites da API pública.
+- Implantação Oracle ARM64: atualização para v1.0.0-rc.2 em preparação nesta revisão; a versão anterior permanece disponível até a troca validada.
+- Inteligência PNCP observada em produção antes da atualização: 964 contratos públicos do MPRJ importados (2022–2026), total inicial agregado de R$ 1,432 bilhão e apenas seis registros temporalmente calculáveis. A amostra é insuficiente, fica marcada como exploratória e não calibra o risco.
 - Integração de borda: frontend conectado ao proxy compartilhado por alias exclusivo; banco e API permanecem na rede interna.
 
 ## Entregue na v0.10
@@ -66,6 +66,18 @@
 - Plano de homologação com frentes, entradas e evidências de aceite.
 - Runbook de implantação, saúde, backup, recuperação e incidente.
 - Checklist que separa produto concluído de dependências institucionais.
+
+## Entregue na v1.0 RC2
+
+- Correção do cadastro que criava a demanda, mas desmontava o formulário antes de limpá-lo e exigia recarga visual.
+- DFD ampliado conforme os campos do art. 2º da Resolução GPGJ nº 2.326/2020, com validação de total e período.
+- Valor unitário com formatação em reais, quantidade e total calculado.
+- Correção versionada e retirada lógica justificada de rascunhos pela unidade requisitante.
+- Anexo de DFD em PDF, DOC e DOCX, com limite, validação mínima e armazenamento persistente.
+- Inteligência PNCP com população, amostra, cobertura, denominador e definições de P50/P75; uso no risco bloqueado abaixo de 30 casos por categoria.
+- Tela de transparência sem exposição de hash técnico.
+- Pré-validação PCA alinhada aos campos do Manual PNCP v2.6 e documentação explícita das fronteiras de SEI, PNCP e identidade.
+- Revisão de prontidão, matriz normativa, metodologia estatística e guia técnico de integrações.
 
 ## Dependências para uso institucional real
 

@@ -4,16 +4,38 @@ from fastapi.testclient import TestClient
 
 TEST_DB = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
 os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB}"
+os.environ["PNCP_UNIT_CODE"] = "MPRJ-DEMO"
+os.environ["UPLOAD_DIR"] = tempfile.mkdtemp(prefix="pac-dfd-tests-")
 from app.main import app
 from app.database import SessionLocal
 from app.pncp_history import MPRJ_CNPJ, sync_history
+
+def demand_data(**overrides):
+    total = overrides.pop("original_value", 100000)
+    quantity = overrides.pop("quantity", 1)
+    data = {
+        "title": "Contratação fictícia para testes",
+        "unit": "Unidade Demonstrativa",
+        "justification": "Necessidade administrativa fictícia formalmente justificada.",
+        "quantity": quantity,
+        "unit_measure": "serviço",
+        "unit_value": total / quantity,
+        "priority": "medium",
+        "requester_name": "Responsável Demonstrativo",
+        "requester_email": "responsavel.teste@mprj.mp.br",
+        "category": "services",
+        "desired_date": "2027-12-01",
+        "original_value": total,
+    }
+    data.update(overrides)
+    return data
 
 def setup_module():
     with TestClient(app): pass
 
 def test_health():
     response = TestClient(app).get("/health")
-    assert response.status_code == 200 and response.json()["version"] == "1.0.0-rc.1"
+    assert response.status_code == 200 and response.json()["version"] == "1.0.0-rc.2"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["x-frame-options"] == "DENY"
     assert "default-src 'none'" in response.headers["content-security-policy"]
@@ -61,7 +83,7 @@ def test_loa_backplanning_and_pncp_validation():
 
 def test_create_transition_and_sei_staging():
     client=TestClient(app)
-    created=client.post("/api/demands",json={"title":"Contratação fictícia criada pela interface","unit":"Unidade Demonstrativa","category":"services","desired_date":"2027-02-01","original_value":150000}).json()
+    created=client.post("/api/demands",json=demand_data(title="Contratação fictícia criada pela interface",desired_date="2027-02-01",original_value=150000)).json()
     assert created["status"] == "draft" and created["execution_status"] == "not_started"
     moved=client.post(f"/api/demands/{created['id']}/execution-transition",json={"target":"preparatory"})
     assert moved.status_code == 200 and moved.json()["execution_status"] == "preparatory"
@@ -71,6 +93,35 @@ def test_create_transition_and_sei_staging():
     assert linked.status_code == 200 and linked.json()["sei_status"] == "linked_manually"
     plan=client.get(f"/api/demands/{created['id']}/sei-integration-plan").json()
     assert plan["will_transmit"] is False and "WSDL" in plan["notice"]
+
+def test_dfd_validation_edit_attachment_and_governed_removal():
+    client = TestClient(app)
+    incomplete = client.post("/api/demands", json={"title": "Cadastro incompleto"})
+    assert incomplete.status_code == 422
+    inconsistent = demand_data(original_value=120000)
+    inconsistent["unit_value"] = 119999.99
+    assert client.post("/api/demands", json=inconsistent).status_code == 422
+    created = client.post("/api/demands", json=demand_data(title="Demanda passível de correção", original_value=120000)).json()
+    updated = client.patch(
+        f"/api/demands/{created['id']}",
+        headers={"X-Actor-Role": "requesting_unit"},
+        json=demand_data(title="Demanda corrigida pela unidade", original_value=125000, change_justification="Correção do objeto e do valor estimado."),
+    )
+    assert updated.status_code == 200 and updated.json()["version"] == 2 and updated.json()["original_value"] == 125000
+    upload = client.post(
+        f"/api/demands/{created['id']}/attachments",
+        headers={"X-Actor-Role": "requesting_unit"},
+        files={"file": ("DFD-demonstrativo.pdf", b"%PDF-1.4\nconteudo ficticio", "application/pdf")},
+    )
+    assert upload.status_code == 201
+    files = client.get(f"/api/demands/{created['id']}/attachments").json()
+    assert len(files) == 1 and files[0]["name"] == "DFD-demonstrativo.pdf"
+    downloaded = client.get(f"/api/demands/{created['id']}/attachments/{files[0]['id']}")
+    assert downloaded.status_code == 200 and downloaded.content.startswith(b"%PDF")
+    removed = client.request("DELETE", f"/api/demands/{created['id']}", headers={"X-Actor-Role": "requesting_unit"}, json={"justification": "Cadastro indevido confirmado pela unidade."})
+    assert removed.status_code == 204
+    assert client.get(f"/api/demands/{created['id']}").status_code == 404
+    assert all(item["id"] != created["id"] for item in client.get("/api/demands").json())
 
 def test_executive_readiness_integrations_and_audit():
     client = TestClient(app)
@@ -90,7 +141,7 @@ def test_configurable_sequential_approval_flow():
     client = TestClient(app)
     flows = client.get("/api/approval-flows").json()
     standard = next(flow for flow in flows if len(flow["steps"]) == 2)
-    demand = client.post("/api/demands", json={"title":"Serviço fictício sujeito a aprovação","unit":"Unidade Demonstrativa","category":"services","desired_date":"2027-06-01","original_value":200000}).json()
+    demand = client.post("/api/demands", json=demand_data(title="Serviço fictício sujeito a aprovação",desired_date="2027-06-01",original_value=200000)).json()
     started = client.post(f"/api/demands/{demand['id']}/approvals", json={"flow_id":standard["id"]})
     assert started.status_code == 201 and started.json()["steps"][0]["status"] == "current"
     approval_id = started.json()["id"]
@@ -109,26 +160,26 @@ def test_pncp_public_history_is_restricted_and_explainable():
         "categoriaProcesso": {"nome": "Serviços"}, "objetoContrato": f"Contrato público fictício {index}",
         "unidadeOrgao": {"codigoUnidade": "1", "nomeUnidade": "MPRJ"}, "valorInicial": 1000 * index,
         "dataAssinatura": "2025-08-01", "dataPublicacaoPncp": "2025-08-02T10:00:00",
-    } for index in range(1, 13)]
+    } for index in range(1, 31)]
     def handler(request: httpx.Request):
         if request.url.path.endswith("/contratos"):
             assert request.url.params["cnpjOrgao"] == MPRJ_CNPJ
             return httpx.Response(200, json={"data": contracts, "totalPaginas": 1})
         return httpx.Response(200, json={"modalidadeNome":"Pregão - Eletrônico","dataPublicacaoPncp":"2025-01-01T10:00:00","dataAberturaProposta":"2025-01-02T10:00:00","dataEncerramentoProposta":"2025-01-15T10:00:00"})
     with SessionLocal() as db, httpx.Client(transport=httpx.MockTransport(handler)) as mocked:
-        result = sync_history(db, 2025, 2025, enrich_limit=12, client=mocked, request_delay=0)
-    assert result["status"] == "completed" and result["inserted"] == 12 and result["enriched"] == 12
+        result = sync_history(db, 2025, 2025, enrich_limit=30, client=mocked, request_delay=0)
+    assert result["status"] == "completed" and result["inserted"] == 30 and result["enriched"] == 30
     metrics = TestClient(app).get("/api/pncp/history/metrics").json()
     services = next(item for item in metrics["categories"] if item["category"] == "services")
-    assert metrics["source_cnpj"] == MPRJ_CNPJ and services["sample_size"] >= 12
+    assert metrics["source_cnpj"] == MPRJ_CNPJ and services["sample_size"] >= 30
     client = TestClient(app)
-    created = client.post("/api/demands", json={"title":"Serviço para risco histórico","unit":"Unidade Demonstrativa","category":"services","desired_date":"2027-09-01","original_value":100000}).json()
+    created = client.post("/api/demands", json=demand_data(title="Serviço para risco histórico",desired_date="2027-09-01",original_value=100000)).json()
     demand = client.get(f"/api/demands/{created['id']}").json()
-    assert demand["risk"]["historical_reference"]["sample_size"] >= 12
+    assert demand["risk"]["historical_reference"]["sample_size"] >= 30
 
 def test_end_to_end_demand_governance_execution_flow():
     client = TestClient(app)
-    created = client.post("/api/demands", json={"title":"Serviço completo de demonstração E2E","unit":"Unidade E2E","category":"services","desired_date":"2027-12-01","original_value":320000,"pncp_item_code":"E2E-001"}).json()
+    created = client.post("/api/demands", json=demand_data(title="Serviço completo de demonstração E2E",unit="Unidade E2E",original_value=320000,pncp_item_code="E2E-001",pncp_catalog_code=1,pncp_classification=2,pncp_superior_code="547",pncp_superior_name="Serviços de apoio administrativo")).json()
     review = client.post(f"/api/demands/{created['id']}/reviews", json={"proposed_title":"Serviço revisado pela governança E2E","proposed_value":330000,"justification":"Revisão completa para validação ponta a ponta."}).json()
     applied = client.post(f"/api/reviews/{review['id']}/approve")
     assert applied.status_code == 200 and applied.json()["history_preserved"] is True
