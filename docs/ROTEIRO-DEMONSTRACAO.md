@@ -14,7 +14,7 @@ Abra uma demanda de risco alto. Mostre valores, data desejada, motivos do risco,
 
 ## 4. Inteligência e transparência — 2 minutos
 
-Abra **Inteligência PNCP**. Mostre que os 964 contratos são dados públicos reais, separados da carteira fictícia, com fonte, cobertura e percentis explicáveis. Em **Transparência**, mostre a versão publicada e o hash de integridade.
+Abra **Inteligência PNCP**. Mostre que os 966 contratos observados em 29/09/2026 são dados públicos reais, separados da carteira fictícia, e diferencie a população dos nove prazos calculáveis. Em **Transparência**, mostre exercício, versão, data e conteúdo aprovado; o hash de integridade permanece como evidência técnica interna e não deve entrar na narrativa executiva.
 
 ## 5. Integrações — 90 segundos
 
@@ -30,7 +30,7 @@ Mensagem final: a plataforma já demonstra o ciclo completo e é portátil; para
 
 ## Perguntas que devem ser antecipadas
 
-- **Usa dados reais?** A carteira operacional é fictícia. A inteligência histórica usa somente dados abertos reais do PNCP referentes ao CNPJ do MPRJ, com origem identificada e sem fornecedores armazenados.
+- **Usa dados reais?** A carteira operacional é fictícia. A inteligência histórica usa somente dados abertos reais do PNCP referentes ao CNPJ do MPRJ, com origem identificada e sem fornecedores armazenados. Os percentis usam apenas os registros com datas públicas completas.
 - **Já publica no PNCP?** Não. Gera e valida o payload localmente; publicar exige homologação e credencial.
 - **Integra com o SEI?** A arquitetura e o adaptador estão preparados para o Web Service oficial; ativação depende do cadastro e das permissões na instância MPRJ.
 - **Depende de nuvem específica?** Não. Pode operar em VPS, datacenter ou infraestrutura institucional com contêineres e PostgreSQL.

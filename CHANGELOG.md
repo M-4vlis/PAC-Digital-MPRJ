@@ -2,6 +2,8 @@
 
 ## v1.0.0-rc.2 — Correções de prontidão institucional
 
+- Apresentação executiva e guia de estudo reconstruídos para uso autônomo por apresentador sem contexto prévio, com notas de fala, roteiro de demonstração, limites reais e respostas de sabatina.
+
 - Corrigida atualização imediata da carteira após criação de demanda.
 - Cadastro transformado em DFD completo, com cálculo monetário em reais e validação normativa.
 - Incluídas edição versionada, retirada lógica justificada e anexos de DFD.
