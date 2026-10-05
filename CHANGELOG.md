@@ -2,6 +2,9 @@
 
 ## v1.0.0-rc.2 — Correções de prontidão institucional
 
+- Restaurado o acesso HTTPS após regressão na configuração compartilhada de borda.
+- Demonstração publicada sem autenticação básica no endereço descritivo `pacdigital-mprj.163-176-228-150.sslip.io`, com redirecionamento do endereço anterior.
+- Acrescentado bloqueio de indexação e documentada a separação entre acesso facilitado à demo fictícia e autenticação obrigatória no uso institucional.
 - Apresentação executiva e guia de estudo reconstruídos para uso autônomo por apresentador sem contexto prévio, com notas de fala, roteiro de demonstração, limites reais e respostas de sabatina.
 
 - Corrigida atualização imediata da carteira após criação de demanda.

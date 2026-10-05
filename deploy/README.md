@@ -9,7 +9,7 @@ docker compose -f deploy/docker-compose.production.yml --env-file .env up -d --b
 docker compose -f deploy/docker-compose.production.yml --env-file .env ps
 ```
 
-A interface ficará disponível apenas no loopback da VPS, na porta definida por `PAC_HTTP_PORT` (padrão `8080`). Para exposição pública, use domínio e proxy HTTPS institucional; não exponha a aplicação sem controle de acesso enquanto a autenticação OIDC não estiver conectada.
+A interface ficará disponível apenas no loopback da VPS, na porta definida por `PAC_HTTP_PORT` (padrão `8080`). Para exposição pública, use domínio e proxy HTTPS. A demonstração temporária pode operar sem login somente com carteira fictícia, integrações externas bloqueadas, cabeçalho `X-Robots-Tag: noindex` e ciência de que os papéis demonstrativos não constituem controle de segurança. Dados ou documentos reais exigem identidade institucional antes da exposição.
 
 Quando já existir um proxy reverso em outra pilha Docker, use o arquivo opcional de borda para conectar somente o frontend à rede compartilhada:
 
@@ -22,6 +22,14 @@ docker compose \
 ```
 
 O proxy poderá encaminhar as requisições para `pac-digital-web:8080`. Banco e API continuam isolados na rede interna da aplicação.
+
+## Demonstração pública temporária
+
+O arquivo `Caddyfile.public-demo` contém a rota de referência sem autenticação básica. No ambiente compartilhado, incorpore somente os blocos do PAC à configuração já existente do proxy; não substitua rotas de outros sistemas. O endereço de demonstração validado em 05/10/2026 é:
+
+`https://pacdigital-mprj.163-176-228-150.sslip.io/`
+
+O endereço antigo redireciona permanentemente para o novo. Um endereço institucional, como `pacdigital.mprj.mp.br`, depende de reserva DNS e certificado administrados pelo MPRJ; basta substituir os nomes dos hosts na configuração, sem alterar a aplicação.
 
 As variáveis SEI e PNCP apenas indicam prontidão de configuração. A v1.0 RC2 não transmite dados externos, mesmo quando valores forem informados. A leitura de dados abertos do PNCP é independente dessas credenciais. `PNCP_UNIT_CODE` identifica a unidade no payload local de pré-validação; não habilita publicação.
 

@@ -47,7 +47,7 @@ Frontend: `http://localhost:5173` · API: `http://localhost:8000/docs`
 
 ## Implantação
 
-Consulte [deploy/README.md](deploy/README.md). A composição de produção usa PostgreSQL e não exige SaaS. Para exposição pública, é obrigatório adicionar HTTPS e controle de acesso institucional.
+Consulte [deploy/README.md](deploy/README.md). A composição de produção usa PostgreSQL e não exige SaaS. A demonstração pública temporária usa HTTPS, dados fictícios, transmissões externas bloqueadas e não exige login. Uso institucional real continua condicionado a identidade OIDC/LDAP e autorização por unidade.
 
 ## Documentação
 

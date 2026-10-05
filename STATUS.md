@@ -14,6 +14,7 @@
 - Implantação Oracle ARM64: v1.0.0-rc.2 ativa em HTTPS, migration `0006` aplicada, API e frontend saudáveis e backup prévio executado.
 - Inteligência PNCP em 29/09/2026: 966 contratos públicos do MPRJ importados (2022–2026), nove registros temporalmente calculáveis e cobertura de 0,93%. A última sincronização enriqueceu sete registros e terminou parcial após resposta HTTP 429 do PNCP. A amostra continua insuficiente, fica marcada como exploratória e não calibra o risco.
 - Integração de borda: frontend conectado ao proxy compartilhado por alias exclusivo; banco e API permanecem na rede interna.
+- Demonstração pública em 05/10/2026: acesso HTTPS restaurado após correção do destino TLS do `sslh` e recomposição da rota do proxy; novo endereço descritivo ativo sem login, com redirecionamento do endereço anterior e bloqueio de indexação por buscadores.
 
 ## Entregue na v0.10
 
@@ -84,7 +85,7 @@
 1. Conectar autenticação institucional e definir matriz de perfis/unidades.
 2. Obter autorização, WSDL, operações e credencial/IP do SEI-MPRJ.
 3. Homologar o payload PCA/PNCP, mapear catálogo e receber credencial institucional.
-4. Definir domínio institucional definitivo, política de backup e observabilidade; o endereço HTTPS atual é apenas para demonstração controlada.
+4. Definir domínio institucional definitivo, política de backup e observabilidade; o endereço HTTPS atual é público, temporário e contém somente dados demonstrativos.
 5. Validar conteúdo, regras, acessibilidade e fluxo de aprovação com as áreas responsáveis.
 
 Nenhum desses itens pode ser fabricado no projeto: são decisões ou credenciais institucionais. A arquitetura mantém cada integração desacoplada para que sejam conectadas sem reescrever o domínio do PAC.

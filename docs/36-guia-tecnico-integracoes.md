@@ -22,7 +22,7 @@ Variáveis reservadas: `SEI_WSDL_URL` e `SEI_SERVICE_KEY`. Antes de implementar 
 
 ## Identidade e autorização
 
-O cabeçalho `X-Actor-Role` é um mecanismo demonstrativo e não é fronteira de segurança. O proxy atual usa autenticação básica apenas para proteger a demonstração. Em homologação, o backend deve validar identidade emitida pelo provedor institucional e derivar papéis e unidade no servidor.
+O cabeçalho `X-Actor-Role` é um mecanismo demonstrativo e não é fronteira de segurança. A demonstração pública temporária não exige login e, por isso, deve conter somente dados fictícios, sem transmissões externas habilitadas. Em homologação, o backend deve validar identidade emitida pelo provedor institucional e derivar papéis e unidade no servidor.
 
 Matriz funcional prevista:
 

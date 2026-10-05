@@ -29,6 +29,16 @@
 3. registrar impacto, intervalo, versão e ação tomada;
 4. recuperar a partir do último backup validado somente com autorização.
 
+## Borda HTTPS da demonstração
+
+- URL canônica temporária: `https://pacdigital-mprj.163-176-228-150.sslip.io/`;
+- o host antigo `pac.163-176-228-150.sslip.io` deve responder com redirecionamento permanente;
+- validar sem credenciais: página, `/health` e um endpoint de leitura em `/api/` devem responder em HTTPS;
+- no arranjo atual, `sslh` recebe a porta 443 e encaminha TLS para o proxy em `127.0.0.1:8443`; destino diferente torna o site inacessível;
+- a rota Caddy deve encaminhar o host canônico para `pac-digital-web:8080`, sem `basic_auth`, e enviar `X-Robots-Tag: noindex, nofollow, noarchive`;
+- como o proxy é compartilhado, uma implantação de outro sistema não pode substituir o arquivo inteiro sem preservar a rota do PAC;
+- a ausência de login é exclusiva da demonstração com dados fictícios. Antes de qualquer dado real, habilitar OIDC/LDAP e autorização no backend.
+
 ## Segredos
 
 Senhas, chaves e tokens devem permanecer em cofre institucional ou variáveis protegidas. Não registrar valores em commits, issues, relatórios ou logs.
