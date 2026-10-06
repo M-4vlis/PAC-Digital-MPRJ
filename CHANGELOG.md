@@ -7,6 +7,7 @@
 - Acrescentado bloqueio de indexação e documentada a separação entre acesso facilitado à demo fictícia e autenticação obrigatória no uso institucional.
 - Apresentação executiva e guia de estudo reconstruídos para uso autônomo por apresentador sem contexto prévio, com notas de fala, roteiro de demonstração, limites reais e respostas de sabatina.
 - Criada versão executiva otimizada de 11 slides, com duração estimada de 7min45s, foco em fluxo, transparência, rastreabilidade, dados e integrações, além de roteiro cronometrado nas notas do apresentador.
+- Criado manual ilustrado autossuficiente de 34 páginas, com passo a passo, telas anotadas, glossário, perguntas frequentes e explicação das fronteiras reais de SEI!, PNCP e identidade institucional.
 
 - Corrigida atualização imediata da carteira após criação de demanda.
 - Cadastro transformado em DFD completo, com cálculo monetário em reais e validação normativa.
