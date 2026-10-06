@@ -51,7 +51,8 @@ Consulte [deploy/README.md](deploy/README.md). A composição de produção usa 
 
 ## Documentação
 
-- [Apresentação executiva v1.0 RC2](docs/material-apresentacao/PAC-Digital-MPRJ-Apresentacao-Executiva-v1-RC2.pptx)
+- [Apresentação executiva de 5–10 minutos v1.0 RC2](docs/material-apresentacao/PAC-Digital-MPRJ-Apresentacao-Executiva-5-10min-v1-RC2.pptx)
+- [Apresentação executiva completa v1.0 RC2](docs/material-apresentacao/PAC-Digital-MPRJ-Apresentacao-Executiva-v1-RC2.pptx)
 - [Guia de estudo e apresentação v1.0 RC2](docs/material-apresentacao/PAC-Digital-MPRJ-Guia-de-Estudo-e-Apresentacao-v1-RC2.docx)
 - [Status atual](STATUS.md)
 - [Roteiro de demonstração executiva](docs/ROTEIRO-DEMONSTRACAO.md)
